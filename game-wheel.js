@@ -104,11 +104,17 @@ window.spinWheel = async function () {
 
   try {
     await setDoc(spinResultRef, selected);
+    console.log("✅ Spin result set:", selected);
+
+    // 🟢 Force local spin immediately
+    currentGame = selected;
+    spinToIndex(index);
   } catch (err) {
     console.error("Error setting spin result:", err);
     debug("❌ Failed to spin.");
   }
 };
+
 
 // ✅ Remove game
 window.removeGame = async function () {
