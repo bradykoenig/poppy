@@ -80,30 +80,28 @@
     }
 
     .avatar-card img {
-      width: 140px;
-      height: 140px;
-      object-fit: contain;
+      width: 100px;
+      height: 100px;
       border-radius: 8px;
+      object-fit: cover;
       margin-bottom: 10px;
-      background: #000;
     }
 
-    .avatar-card .platform {
-      font-weight: 600;
-      font-size: 14px;
-      color: #8a64ff;
+    .platform {
+      font-weight: bold;
+      color: #a57cff;
+      margin-bottom: 5px;
     }
 
-    .avatar-card .username {
+    .username {
       font-size: 14px;
-      margin-top: 4px;
       color: #ccc;
     }
 
-    .avatar-card .submitted {
+    .submitted {
       font-size: 12px;
-      color: #777;
-      margin-top: 6px;
+      color: #666;
+      margin-top: 5px;
     }
   </style>
 </head>
@@ -155,12 +153,10 @@
 
         const result = await res.json();
 
-        if (!res.ok) {
-          throw new Error(result.message || "Unknown error saving avatars.");
-        }
+        if (!res.ok) throw new Error(result.message || "Unknown error saving avatars.");
 
         alert(result.message || "Avatars saved!");
-        loadAvatars(); // refresh grid
+        loadAvatars(); // refresh
       } catch (err) {
         console.error("Error saving avatars:", err);
         alert("Failed to save avatars: " + err.message);
@@ -169,9 +165,13 @@
 
     async function getRobloxId(username) {
       try {
-        const res = await fetch(`https://corsproxy.io/?https://api.roblox.com/users/get-by-username?username=${username}`);
+        const res = await fetch("https://users.roblox.com/v1/usernames/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ usernames: [username] })
+        });
         const data = await res.json();
-        return data.Id || null;
+        return data.data && data.data.length > 0 ? data.data[0].id : null;
       } catch (e) {
         console.warn("Failed to fetch Roblox ID:", e);
         return null;
@@ -192,7 +192,7 @@
             if (robloxId) {
               const robloxCard = `
                 <div class="avatar-card">
-                  <img src="https://thumbnails.roblox.com/v1/users/avatar?userIds=${robloxId}&size=720x720&format=Png&isCircular=false" alt="Roblox Avatar" />
+                  <img src="https://thumbnails.roblox.com/v1/users/avatar?userIds=${robloxId}&size=420x420&format=Png&isCircular=false" alt="Roblox Avatar" />
                   <div class="platform">Roblox</div>
                   <div class="username">${entry.robloxUsername}</div>
                   <div class="submitted">Submitted by: ${entry.discordTag}</div>
@@ -206,7 +206,7 @@
           if (entry.minecraftUsername) {
             const minecraftCard = `
               <div class="avatar-card">
-                <img src="https://mc-heads.net/body/${entry.minecraftUsername}" alt="Minecraft Avatar" />
+                <img src="https://minotar.net/armor/body/${entry.minecraftUsername}/100.png" alt="Minecraft Avatar" />
                 <div class="platform">Minecraft</div>
                 <div class="username">${entry.minecraftUsername}</div>
                 <div class="submitted">Submitted by: ${entry.discordTag}</div>
