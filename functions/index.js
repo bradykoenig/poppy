@@ -1,50 +1,19 @@
 const functions = require("firebase-functions");
+const admin = require("firebase-admin");
 const cors = require("cors")({ origin: true });
+const { setDoc, doc, serverTimestamp } = require("firebase-admin/firestore");
 
 // Fix for node-fetch v3+ (ESM-only)
-const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
-functions.setGlobalOptions({ maxInstances: 10 });
+admin.initializeApp();
+const db = admin.firestore();
 
 const CLIENT_ID = "1395218126211125259";
 const CLIENT_SECRET = "3pCcUvTR2Z0mPmzAOPHUKTGOzTMbWPk2";
 const REDIRECT_URI = "https://poppypooperz.com/oauth-callback.html";
 
-exports.saveAvatars = functions.https.onRequest((req, res) => {
-  cors(req, res, async () => {
-    const { discordId, discordTag, robloxUsername, minecraftUsername } = req.body;
-
-    if (!discordId) return res.status(400).json({ error: "Missing Discord ID" });
-
-    const docRef = admin.firestore().collection("avatars").doc(discordId);
-
-    const avatarData = {
-      discordTag,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    };
-
-    // Optional: Roblox avatar
-    if (robloxUsername) {
-      avatarData.roblox = {
-        username: robloxUsername,
-        avatar: `https://thumbnails.roblox.com/v1/users/avatar?usernames=${robloxUsername}&format=Png&size=150x150`
-      };
-    }
-
-    // Optional: Minecraft avatar
-    if (minecraftUsername) {
-      avatarData.minecraft = {
-        username: minecraftUsername,
-        avatar: `https://minotar.net/helm/${minecraftUsername}/150.png`
-      };
-    }
-
-    await docRef.set(avatarData, { merge: true });
-    res.json({ message: "Avatars saved!" });
-  });
-});
-
-
+// OAuth2 token exchange
 exports.exchangeCode = functions.https.onRequest((req, res) => {
   cors(req, res, async () => {
     const code = req.body.code;
@@ -89,14 +58,62 @@ exports.exchangeCode = functions.https.onRequest((req, res) => {
         return res.status(500).json({ error: "Incomplete user or guild data", user, guilds });
       }
 
-      console.log("Final Response:");
-      console.log({ access_token, user, guilds });
-
       res.json({ access_token, user, guilds });
 
     } catch (err) {
       console.error("OAuth error:", err);
       res.status(500).json({ error: "Internal server error" });
+    }
+  });
+});
+
+// Save avatar data to Firestore
+exports.saveAvatars = functions.https.onRequest((req, res) => {
+  cors(req, res, async () => {
+    try {
+      if (req.method !== "POST") {
+        return res.status(405).json({ message: "Method Not Allowed" });
+      }
+
+      const { discordId, discordTag, robloxUsername, minecraftUsername } = req.body;
+
+      if (!discordId || !discordTag) {
+        return res.status(400).json({ message: "Missing Discord ID or Tag" });
+      }
+
+      const userRef = db.collection("avatarCatalog").doc(discordId);
+
+      await userRef.set({
+        discordId,
+        discordTag,
+        robloxUsername: robloxUsername || null,
+        minecraftUsername: minecraftUsername || null,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      return res.status(200).json({ message: "Avatars saved successfully!" });
+    } catch (error) {
+      console.error("Error saving avatars:", error);
+      return res.status(500).json({ message: "Internal server error." });
+    }
+  });
+});
+
+// Get all saved avatars (public)
+exports.getAvatars = functions.https.onRequest((req, res) => {
+  cors(req, res, async () => {
+    try {
+      const snapshot = await db.collection("avatarCatalog").get();
+
+      const avatars = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      return res.status(200).json(avatars);
+    } catch (error) {
+      console.error("Error fetching avatars:", error);
+      return res.status(500).json({ message: "Internal server error" });
     }
   });
 });
