@@ -59,12 +59,21 @@ onSnapshot(spinResultRef, (docSnap) => {
     return;
   }
 
-  const index = games.findIndex(g => g.id === result.id);
-  if (index !== -1) {
-    currentGame = result;
-    spinToIndex(index); // ✅ Always spin if we have a match
-  }
+  // Wait until games[] is populated
+  const waitForGames = () => {
+    const index = games.findIndex(g => g.id === result.id);
+    if (index !== -1) {
+      currentGame = result;
+      spinToIndex(index);
+    } else {
+      // Retry after short delay until the game list is synced
+      setTimeout(waitForGames, 100);
+    }
+  };
+
+  waitForGames();
 });
+
 
 
 window.submitGame = async function () {
