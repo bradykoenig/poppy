@@ -8,7 +8,6 @@ html, body {
   color: white;
 }
 
-/* Ensure layout fills the page */
 body {
   display: flex;
   flex-direction: column;
@@ -64,7 +63,7 @@ nav a.active {
   border-bottom: 2px solid #8a64ff;
 }
 
-/* Home page layout */
+/* Home and shared containers */
 .main, .container {
   flex-grow: 1;
   display: flex;
@@ -111,7 +110,6 @@ nav a.active {
 .discord-icon {
   width: 28px;
   height: 28px;
-  display: block;
 }
 
 /* Shared button + username */
@@ -254,6 +252,26 @@ button:hover {
   -webkit-text-fill-color: transparent;
 }
 
+.input-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+#gameInput {
+  width: 260px;
+  max-width: 90vw;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 16px;
+  background: #1e1e1e;
+  border: 1px solid #888;
+  color: white;
+  outline: none;
+}
+
 .wheel-wrapper {
   display: flex;
   flex-direction: column;
@@ -266,6 +284,7 @@ button:hover {
   border-radius: 50%;
   background: #222;
   box-shadow: 0 0 30px rgba(138, 100, 255, 0.4);
+  cursor: pointer;
 }
 
 .selected-game {
@@ -315,5 +334,18 @@ button:hover {
   #wheel-canvas {
     width: 280px;
     height: 280px;
+  }
+
+  .input-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  #gameInput {
+    width: 100%;
+  }
+
+  button {
+    width: 100%;
   }
 }
