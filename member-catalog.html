@@ -73,20 +73,26 @@
       text-align: center;
     }
 
-    .avatar-card img {
+    .discord-tag {
+      font-weight: 600;
+      margin-bottom: 15px;
+      font-size: 16px;
+    }
+
+    .avatar-sub {
+      margin-bottom: 15px;
+    }
+
+    .avatar-sub img {
       width: 100px;
       height: 100px;
       border-radius: 50%;
       object-fit: cover;
-      margin-bottom: 10px;
+      display: block;
+      margin: 0 auto 8px auto;
     }
 
-    .avatar-card .discord-tag {
-      font-weight: 600;
-      margin-bottom: 5px;
-    }
-
-    .avatar-card .username {
+    .avatar-sub .username {
       font-size: 14px;
       color: #ccc;
     }
@@ -111,6 +117,17 @@
   </div>
 
   <script>
+    async function getRobloxUserId(username) {
+      try {
+        const res = await fetch(`https://api.roblox.com/users/get-by-username?username=${username}`);
+        const data = await res.json();
+        return data.Id || null;
+      } catch (err) {
+        console.error("Error fetching Roblox userId:", err);
+        return null;
+      }
+    }
+
     async function saveAvatars() {
       const discordUser = JSON.parse(localStorage.getItem("discordUser"));
       if (!discordUser) {
@@ -145,7 +162,7 @@
         }
 
         alert(result.message || "Avatars saved!");
-        loadAvatars(); // Refresh grid
+        loadAvatars(); // refresh grid
       } catch (err) {
         console.error("Error saving avatars:", err);
         alert("Failed to save avatars: " + err.message);
@@ -153,35 +170,45 @@
     }
 
     async function loadAvatars() {
-      try {
-        const res = await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/getAvatars");
-        const data = await res.json();
+      const res = await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/getAvatars");
+      const data = await res.json();
 
-        const container = document.getElementById("avatar-list");
-        container.innerHTML = "";
+      const container = document.getElementById("avatar-list");
+      container.innerHTML = "";
 
-        data.forEach(entry => {
-          const robloxImg = entry.robloxUsername
-            ? `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${entry.robloxUsername}&size=100x100&format=Png`
-            : null;
-          const minecraftImg = entry.minecraftUsername
-            ? `https://minotar.net/avatar/${entry.minecraftUsername}/100`
-            : null;
+      for (const entry of data) {
+        let robloxImgHTML = "";
+        if (entry.robloxUsername) {
+          const userId = await getRobloxUserId(entry.robloxUsername);
+          if (userId) {
+            const robloxImgUrl = `https://www.roblox.com/headshot-thumbnail/image?userId=${userId}&width=100&height=100&format=png`;
+            robloxImgHTML = `
+              <div class="avatar-sub">
+                <img src="${robloxImgUrl}" alt="Roblox Avatar" />
+                <div class="username">Roblox: ${entry.robloxUsername}</div>
+              </div>
+            `;
+          }
+        }
 
-          const avatarHTML = `
-            <div class="avatar-card">
-              <div class="discord-tag">${entry.discordTag}</div>
-              ${robloxImg ? `<img src="${robloxImg}" alt="Roblox Avatar" />` : ""}
-              ${minecraftImg ? `<img src="${minecraftImg}" alt="Minecraft Avatar" />` : ""}
-              ${entry.robloxUsername ? `<div class="username">Roblox: ${entry.robloxUsername}</div>` : ""}
-              ${entry.minecraftUsername ? `<div class="username">Minecraft: ${entry.minecraftUsername}</div>` : ""}
+        const minecraftImgHTML = entry.minecraftUsername
+          ? `
+            <div class="avatar-sub">
+              <img src="https://minotar.net/avatar/${entry.minecraftUsername}/100" alt="Minecraft Avatar" />
+              <div class="username">Minecraft: ${entry.minecraftUsername}</div>
             </div>
-          `;
-          container.innerHTML += avatarHTML;
-        });
-      } catch (err) {
-        console.error("Error loading avatars:", err);
-        alert("Failed to load avatars: " + err.message);
+          `
+          : "";
+
+        const cardHTML = `
+          <div class="avatar-card">
+            <div class="discord-tag">${entry.discordTag}</div>
+            ${robloxImgHTML}
+            ${minecraftImgHTML}
+          </div>
+        `;
+
+        container.innerHTML += cardHTML;
       }
     }
 
