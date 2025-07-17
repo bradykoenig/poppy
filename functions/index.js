@@ -1,12 +1,49 @@
 const functions = require("firebase-functions");
-const fetch = require("node-fetch");
 const cors = require("cors")({ origin: true });
+
+// Fix for node-fetch v3+ (ESM-only)
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 functions.setGlobalOptions({ maxInstances: 10 });
 
 const CLIENT_ID = "1395218126211125259";
 const CLIENT_SECRET = "3pCcUvTR2Z0mPmzAOPHUKTGOzTMbWPk2";
 const REDIRECT_URI = "https://poppypooperz.com/oauth-callback.html";
+
+exports.saveAvatars = functions.https.onRequest((req, res) => {
+  cors(req, res, async () => {
+    const { discordId, discordTag, robloxUsername, minecraftUsername } = req.body;
+
+    if (!discordId) return res.status(400).json({ error: "Missing Discord ID" });
+
+    const docRef = admin.firestore().collection("avatars").doc(discordId);
+
+    const avatarData = {
+      discordTag,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+
+    // Optional: Roblox avatar
+    if (robloxUsername) {
+      avatarData.roblox = {
+        username: robloxUsername,
+        avatar: `https://thumbnails.roblox.com/v1/users/avatar?usernames=${robloxUsername}&format=Png&size=150x150`
+      };
+    }
+
+    // Optional: Minecraft avatar
+    if (minecraftUsername) {
+      avatarData.minecraft = {
+        username: minecraftUsername,
+        avatar: `https://minotar.net/helm/${minecraftUsername}/150.png`
+      };
+    }
+
+    await docRef.set(avatarData, { merge: true });
+    res.json({ message: "Avatars saved!" });
+  });
+});
+
 
 exports.exchangeCode = functions.https.onRequest((req, res) => {
   cors(req, res, async () => {
@@ -54,7 +91,6 @@ exports.exchangeCode = functions.https.onRequest((req, res) => {
 
       console.log("Final Response:");
       console.log({ access_token, user, guilds });
-
 
       res.json({ access_token, user, guilds });
 

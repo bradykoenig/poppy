@@ -1,0 +1,32 @@
+<script>
+  // Called on form submission
+  async function saveAvatars() {
+    const discordUser = JSON.parse(localStorage.getItem("discordUser"));
+    if (!discordUser) {
+      alert("You must be logged in with Discord to save avatars.");
+      return;
+    }
+
+    const robloxUsername = document.getElementById("roblox-username").value.trim();
+    const minecraftUsername = document.getElementById("minecraft-username").value.trim();
+
+    if (!robloxUsername && !minecraftUsername) {
+      alert("Please enter at least one username.");
+      return;
+    }
+
+    const docRef = await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/saveAvatars", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        discordId: discordUser.id,
+        discordTag: `${discordUser.username}#${discordUser.discriminator}`,
+        robloxUsername,
+        minecraftUsername
+      })
+    });
+
+    const result = await docRef.json();
+    alert(result.message);
+  }
+</script>
