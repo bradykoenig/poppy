@@ -1,11 +1,13 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getAuth,
-  onAuthStateChanged,
   signInWithCustomToken,
   setPersistence,
-  browserLocalPersistence
+  browserLocalPersistence,
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBOCaso0cw72WxrObQTOlcwSXzEVV2HP7U",
@@ -15,8 +17,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 
-// Auto-login if token stored
+// Persist session if token is saved
 const storedToken = localStorage.getItem("firebaseToken");
 if (storedToken) {
   setPersistence(auth, browserLocalPersistence).then(() =>
@@ -24,7 +27,6 @@ if (storedToken) {
   ).catch(console.error);
 }
 
-// DEBUG: Log state
 onAuthStateChanged(auth, (user) => {
   if (user) {
     console.log("✅ Firebase signed in:", user.uid);
@@ -32,3 +34,5 @@ onAuthStateChanged(auth, (user) => {
     console.warn("❌ Not signed into Firebase");
   }
 });
+
+export { auth, db };

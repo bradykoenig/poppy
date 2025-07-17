@@ -1,19 +1,8 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-  getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, setDoc
+  collection, addDoc, onSnapshot, deleteDoc, doc, setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBOCaso0cw72WxrObQTOlcwSXzEVV2HP7U",
-  authDomain: "poppy-d5573.firebaseapp.com",
-  projectId: "poppy-d5573",
-  storageBucket: "poppy-d5573.appspot.com",
-  messagingSenderId: "209535543073",
-  appId: "1:209535543073:web:3417bba50280f44d658060"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+import { db } from "./firebase-auth.js"; // ✅ Import shared instance
 
 const canvas = document.getElementById("wheel-canvas");
 const ctx = canvas.getContext("2d");
@@ -28,10 +17,11 @@ const spinResultRef = doc(db, "gameWheelMeta", "spinResult");
 let latestSpinResult = null;
 
 function debug(msg) {
-  document.getElementById("debug").textContent = msg;
+  const debugBox = document.getElementById("debug");
+  if (debugBox) debugBox.textContent = msg;
 }
 
-// Watch game list
+// Live game list sync
 onSnapshot(collection(db, "gameWheel"), (snapshot) => {
   games = [];
   snapshot.forEach(doc => {
@@ -39,7 +29,6 @@ onSnapshot(collection(db, "gameWheel"), (snapshot) => {
   });
   drawWheel();
 
-  // If a spin is pending from earlier
   if (latestSpinResult && latestSpinResult.game) {
     const index = games.findIndex(g => g.id === latestSpinResult.id);
     if (index !== -1) {
@@ -49,7 +38,7 @@ onSnapshot(collection(db, "gameWheel"), (snapshot) => {
   }
 });
 
-// Watch spin result
+// Listen for spin result
 onSnapshot(spinResultRef, (docSnap) => {
   const result = docSnap.data();
   latestSpinResult = result;
@@ -110,7 +99,7 @@ window.keepGame = async function () {
   await setDoc(spinResultRef, {});
 };
 
-// Draw the wheel
+// Wheel drawing logic
 function drawWheel() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -147,7 +136,7 @@ function drawWheel() {
     ctx.restore();
   }
 
-  // Draw arrow
+  // Arrow
   ctx.fillStyle = "white";
   ctx.beginPath();
   ctx.moveTo(centerX - 10, 0);
@@ -156,7 +145,7 @@ function drawWheel() {
   ctx.fill();
 }
 
-// Animate to a selected index
+// Spin animation
 function spinToIndex(index) {
   if (games.length === 0 || index < 0) return;
 
