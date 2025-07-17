@@ -19,7 +19,8 @@
       justify-content: space-between;
       background: #161616;
       padding: 20px 40px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.4);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+      flex-wrap: wrap;
     }
 
     .logo {
@@ -33,18 +34,31 @@
     .logo img {
       height: 40px;
       margin-right: 10px;
+      border-radius: 50%;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      margin-top: 10px;
     }
 
     nav a {
       color: #aaa;
       text-decoration: none;
-      margin-left: 30px;
+      margin-left: 20px;
       font-weight: 500;
       transition: 0.2s ease;
     }
 
     nav a:hover {
       color: #fff;
+    }
+
+    nav a.active {
+      color: #ffffff;
+      font-weight: 600;
+      border-bottom: 2px solid #8a64ff;
     }
 
     .main {
@@ -76,6 +90,23 @@
       color: #777;
     }
 
+    .signout-btn {
+      margin-top: 15px;
+      font-size: 14px;
+      background: none;
+      border: 1px solid #8a64ff;
+      color: #8a64ff;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .signout-btn:hover {
+      background: #8a64ff;
+      color: white;
+    }
+
     @media (max-width: 768px) {
       header {
         flex-direction: column;
@@ -84,6 +115,10 @@
       }
       nav {
         margin-top: 10px;
+        flex-direction: column;
+      }
+      nav a {
+        margin: 10px 0 0 0;
       }
       .main h1 {
         font-size: 36px;
@@ -94,29 +129,38 @@
 <body>
   <header>
     <div class="logo">
-      <img src="/assets/logo.png" alt="Poppy Pooperz Logo" />
+      <img src="assets/logo.png" alt="Poppy Pooperz Logo" />
       Poppy Pooperz
     </div>
     <nav>
-      <a href="#">Home</a>
-      <a href="#">Avatar Catalog</a>
-      <a href="#">Game Wheel</a>
-      <a href="#">Quote Wall</a>
-      <a href="#">Who's Online</a>
+      <a href="home.html" class="active">Home</a>
+      <a href="member-catalog.html">Avatar Catalog</a>
+      <a href="game-wheel.html">Game Wheel</a>
+      <a href="quote-wall.html">Quote Wall</a>
+      <a href="who-is-online.html">Who's Online</a>
     </nav>
   </header>
 
   <div class="main">
     <h1>Welcome to Poppy Pooperz</h1>
     <p>Your community hub for games, quotes, avatars, and chaos. Explore the Game Wheel, share quotes, and show off your look.</p>
-    <div class="username" id="username">Logged in as ...</div>
+    <div class="username" id="username">Checking user...</div>
+    <button class="signout-btn" onclick="signOut()">Sign Out</button>
   </div>
 
   <script>
-    // Show logged-in Discord username
     const user = JSON.parse(localStorage.getItem("discordUser"));
+    const usernameEl = document.getElementById("username");
+
     if (user && user.username) {
-      document.getElementById("username").textContent = `Logged in as ${user.username}#${user.discriminator}`;
+      usernameEl.textContent = `Logged in as ${user.username}#${user.discriminator}`;
+    } else {
+      usernameEl.textContent = "You are not logged in.";
+    }
+
+    function signOut() {
+      localStorage.removeItem("discordUser");
+      window.location.href = "index.html";
     }
   </script>
 </body>
