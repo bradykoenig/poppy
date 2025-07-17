@@ -112,35 +112,46 @@
 
   <script>
     async function saveAvatars() {
-      const discordUser = JSON.parse(localStorage.getItem("discordUser"));
-      if (!discordUser) {
-        alert("You must be logged in with Discord to save avatars.");
-        return;
-      }
+  const discordUser = JSON.parse(localStorage.getItem("discordUser"));
+  if (!discordUser) {
+    alert("You must be logged in with Discord to save avatars.");
+    return;
+  }
 
-      const robloxUsername = document.getElementById("roblox-username").value.trim();
-      const minecraftUsername = document.getElementById("minecraft-username").value.trim();
+  const robloxUsername = document.getElementById("roblox-username").value.trim();
+  const minecraftUsername = document.getElementById("minecraft-username").value.trim();
 
-      if (!robloxUsername && !minecraftUsername) {
-        alert("Please enter at least one username.");
-        return;
-      }
+  if (!robloxUsername && !minecraftUsername) {
+    alert("Please enter at least one username.");
+    return;
+  }
 
-      const res = await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/saveAvatars", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          discordId: discordUser.id,
-          discordTag: `${discordUser.username}#${discordUser.discriminator}`,
-          robloxUsername,
-          minecraftUsername
-        })
-      });
+  try {
+    const res = await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/saveAvatars", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        discordId: discordUser.id,
+        discordTag: `${discordUser.username}#${discordUser.discriminator}`,
+        robloxUsername,
+        minecraftUsername
+      })
+    });
 
-      const result = await res.json();
-      alert(result.message);
-      loadAvatars(); // refresh list
+    const result = await res.json();
+
+    if (!res.ok) {
+      throw new Error(result.message || "Unknown error saving avatars.");
     }
+
+    alert(result.message || "Avatars saved!");
+    loadAvatars(); // refresh grid
+  } catch (err) {
+    console.error("Error saving avatars:", err);
+    alert("Failed to save avatars: " + err.message);
+  }
+}
+
 
     async function loadAvatars() {
       const res = await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/getAvatars");
