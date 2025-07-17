@@ -8,77 +8,79 @@
   <h2>Logging in...</h2>
 
   <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getAuth,
+      signInWithCustomToken,
+      setPersistence,
+      browserLocalPersistence
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-  const params = new URLSearchParams(window.location.search);
-  const code = params.get("code");
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
 
-  if (!code) {
-    alert("Login failed: No authorization code found.");
-    window.location.href = "/home.html";
-  }
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyBOCaso0cw72WxrObQTOlcwSXzEVV2HP7U",
-    authDomain: "poppy-d5573.firebaseapp.com",
-    projectId: "poppy-d5573",
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-
-  try {
-    // Step 1: Get Discord OAuth access token
-    const exchangeRes = await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/exchangeCode", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code })
-    });
-
-    const { access_token, user, guilds } = await exchangeRes.json();
-
-    if (!access_token || !user || !guilds) {
-      throw new Error("Missing required data from backend.");
+    if (!code) {
+      alert("Login failed: No authorization code found.");
+      window.location.href = "/home.html";
     }
 
-    // Step 2: Ensure user is in the server
-    const inPoppyPooperz = Array.isArray(guilds) &&
-      guilds.some(g => g.id === "1391923229249114112");
+    const firebaseConfig = {
+      apiKey: "AIzaSyBOCaso0cw72WxrObQTOlcwSXzEVV2HP7U",
+      authDomain: "poppy-d5573.firebaseapp.com",
+      projectId: "poppy-d5573"
+    };
 
-    if (!inPoppyPooperz) {
-      alert("You are not in the Poppy Pooperz Discord server!");
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    try {
+      // Step 1: Exchange Discord code for access token
+      const tokenRes = await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/exchangeCode", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code })
+      });
+
+      const { access_token, user, guilds } = await tokenRes.json();
+
+      if (!access_token || !user || !guilds) {
+        throw new Error("Missing Discord login data");
+      }
+
+      // Step 2: Check if user is in server
+      const inServer = guilds.some(g => g.id === "1391923229249114112");
+      if (!inServer) {
+        alert("You are not in the Poppy Pooperz Discord server!");
+        window.location.href = "/";
+        return;
+      }
+
+      // Step 3: Get Firebase custom token using Discord access token
+      const loginRes = await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/discordLogin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accessToken: access_token })
+      });
+
+      const { firebaseToken } = await loginRes.json();
+
+      if (!firebaseToken) throw new Error("Missing Firebase token");
+
+      // Step 4: Persist and sign in
+      await setPersistence(auth, browserLocalPersistence);
+      await signInWithCustomToken(auth, firebaseToken);
+
+      // Step 5: Save both tokens
+      localStorage.setItem("discordUser", JSON.stringify(user));
+      localStorage.setItem("firebaseToken", firebaseToken);
+
+      // ✅ All done — go to homepage
       window.location.href = "/";
-      return;
+    } catch (err) {
+      console.error("OAuth callback error:", err);
+      alert("Login failed.");
+      window.location.href = "/";
     }
-
-    // Step 3: Exchange Discord access token for Firebase custom token
-    const loginRes = await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/discordLogin", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ accessToken: access_token })
-    });
-
-    const loginData = await loginRes.json();
-
-    if (!loginData.firebaseToken) {
-      throw new Error("Failed to receive Firebase token.");
-    }
-
-    // Step 4: Sign in to Firebase
-    await signInWithCustomToken(auth, loginData.firebaseToken);
-
-    // Step 5: Save user info
-    localStorage.setItem("discordUser", JSON.stringify(user));
-
-    // ✅ Success
-    window.location.href = "/";
-  } catch (err) {
-    console.error("OAuth callback error:", err);
-    alert("Login failed");
-    window.location.href = "/";
-  }
-</script>
-
+  </script>
 </body>
 </html>
