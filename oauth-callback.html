@@ -6,6 +6,7 @@
 </head>
 <body style="background: #0f0f0f; color: white; text-align: center; padding-top: 100px;">
   <h2>Logging in...</h2>
+
   <script>
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
@@ -17,24 +18,31 @@
 
     fetch("https://us-central1-poppy-d5573.cloudfunctions.net/exchangeCode", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify({ code })
     })
     .then(res => res.json())
     .then(data => {
-      if (!data.user || !data.guilds) {
-        throw new Error("Invalid response from backend");
+      if (!data.access_token || !data.user || !data.guilds) {
+        throw new Error("Missing required data from backend.");
       }
 
-      localStorage.setItem("discordUser", JSON.stringify(data.user));
+      const { access_token, user, guilds } = data;
 
-      const inPoppyPooperz = Array.isArray(data.guilds) &&
-                             data.guilds.some(g => g.id === "1391923229249114112");
+      // Store user info locally
+      localStorage.setItem("discordUser", JSON.stringify(user));
+
+      // Check if user is in the Poppy Pooperz Discord server
+      const inPoppyPooperz = Array.isArray(guilds) &&
+        guilds.some(g => g.id === "1391923229249114112");
 
       if (!inPoppyPooperz) {
         alert("You are not in the Poppy Pooperz Discord server!");
       }
 
+      // Redirect to home page
       window.location.href = "/";
     })
     .catch(err => {
