@@ -2,68 +2,80 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Member Avatar Catalog</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Member Avatar Catalog - Poppy Pooperz</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet"/>
   <style>
     body {
-      background-color: #111;
-      color: white;
-      font-family: 'Poppins', sans-serif;
       margin: 0;
-      padding: 0;
+      font-family: 'Outfit', sans-serif;
+      background: #0e0e0e;
+      color: white;
+      padding: 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
 
     h1 {
-      margin-top: 40px;
-      font-size: 2em;
-      font-weight: 700;
+      text-align: center;
+      margin-bottom: 20px;
+      font-weight: 800;
     }
 
     .form-container {
-      margin-top: 20px;
-      background-color: #1a1a1a;
-      padding: 20px 30px;
-      border-radius: 10px;
       width: 100%;
-      max-width: 400px;
+      max-width: 500px;
+      background: #161616;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 40px;
     }
 
-    .form-container input {
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: 600;
+    }
+
+    input {
       width: 100%;
       padding: 10px;
-      margin-bottom: 15px;
-      border: none;
-      border-radius: 5px;
-      background-color: #2a2a2a;
+      margin-top: 5px;
+      background: #2a2a2a;
       color: white;
+      border: none;
+      border-radius: 6px;
     }
 
-    .form-container button {
-      background-color: #8b5cf6;
+    button {
+      margin-top: 20px;
+      padding: 12px 20px;
+      background: #8a64ff;
       color: white;
-      padding: 10px 20px;
       border: none;
-      border-radius: 5px;
+      border-radius: 6px;
       cursor: pointer;
+      font-weight: 600;
+      transition: 0.2s;
     }
 
-    .avatars-container {
+    button:hover {
+      background: #a57cff;
+    }
+
+    .avatars-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 30px;
-      margin-top: 40px;
-      width: 90%;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
+      width: 100%;
       max-width: 1000px;
     }
 
     .avatar-card {
-      background-color: #1a1a1a;
-      padding: 20px;
+      background: #1b1b1b;
       border-radius: 10px;
+      padding: 15px;
       text-align: center;
     }
 
@@ -71,97 +83,142 @@
       width: 100px;
       height: 100px;
       border-radius: 50%;
-      margin-bottom: 10px;
       object-fit: cover;
+      margin-bottom: 10px;
     }
 
-    .timestamp {
-      font-size: 12px;
-      color: gray;
-      margin-top: 6px;
+    .avatar-card .discord-tag {
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .avatar-card .username {
+      font-size: 14px;
+      color: #ccc;
     }
   </style>
 </head>
 <body>
+
   <h1>Member Avatar Catalog</h1>
 
   <div class="form-container">
-    <input type="text" id="robloxUsername" placeholder="Roblox Username">
-    <input type="text" id="minecraftUsername" placeholder="Minecraft Username">
+    <label for="roblox-username">Roblox Username:</label>
+    <input type="text" id="roblox-username" placeholder="Enter Roblox username" />
+
+    <label for="minecraft-username">Minecraft Username:</label>
+    <input type="text" id="minecraft-username" placeholder="Enter Minecraft username" />
+
     <button onclick="saveAvatars()">Save Avatars</button>
   </div>
 
-  <div class="avatars-container" id="avatarsGrid"></div>
+  <div class="avatars-grid" id="avatar-list">
+    <!-- Avatar cards will appear here -->
+  </div>
 
   <script>
-    const DISCORD_ID = localStorage.getItem("discord_id") || "default#0000";
+    async function saveAvatars() {
+      const discordUser = JSON.parse(localStorage.getItem("discordUser"));
+      if (!discordUser) {
+        alert("You must be logged in with Discord to save avatars.");
+        return;
+      }
 
-    const getRobloxId = async (username) => {
+      const robloxUsername = document.getElementById("roblox-username").value.trim();
+      const minecraftUsername = document.getElementById("minecraft-username").value.trim();
+
+      if (!robloxUsername && !minecraftUsername) {
+        alert("Please enter at least one username.");
+        return;
+      }
+
       try {
-        const res = await fetch("https://users.roblox.com/v1/usernames/users", {
+        const res = await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/saveAvatars", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ usernames: [username] }),
+          body: JSON.stringify({
+            discordId: discordUser.id,
+            discordTag: `${discordUser.username}#${discordUser.discriminator}`,
+            robloxUsername,
+            minecraftUsername
+          })
         });
 
+        const result = await res.json();
+
+        if (!res.ok) {
+          throw new Error(result.message || "Unknown error saving avatars.");
+        }
+
+        alert(result.message || "Avatars saved!");
+        loadAvatars(); // refresh grid
+      } catch (err) {
+        console.error("Error saving avatars:", err);
+        alert("Failed to save avatars: " + err.message);
+      }
+    }
+
+    async function getRobloxId(username) {
+      try {
+        const res = await fetch(`https://users.roblox.com/v1/usernames/users`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ usernames: [username] })
+        });
         const data = await res.json();
         return data.data?.[0]?.id || null;
       } catch (e) {
         console.warn("Failed to fetch Roblox ID:", e);
         return null;
       }
-    };
+    }
 
-    const saveAvatars = async () => {
-      const roblox = document.getElementById("robloxUsername").value.trim();
-      const minecraft = document.getElementById("minecraftUsername").value.trim();
+    async function getRobloxAvatarURL(userId) {
+      try {
+        const res = await fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=100x100&format=Png&isCircular=true`);
+        const data = await res.json();
+        return data.data?.[0]?.imageUrl || null;
+      } catch (e) {
+        console.warn("Failed to fetch Roblox avatar URL:", e);
+        return null;
+      }
+    }
 
-      if (!roblox && !minecraft) return alert("Enter at least one username!");
+    async function loadAvatars() {
+      try {
+        const res = await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/getAvatars");
+        const data = await res.json();
+        const container = document.getElementById("avatar-list");
+        container.innerHTML = "";
 
-      const robloxId = roblox ? await getRobloxId(roblox) : null;
-      const robloxAvatar = robloxId ? `https://www.roblox.com/headshot-thumbnail/image?userId=${robloxId}&width=150&height=150&format=png` : null;
-      const minecraftAvatar = minecraft ? `https://minotar.net/helm/${minecraft}/100.png` : null;
+        for (const entry of data) {
+          let robloxImg = "";
+          if (entry.robloxUsername) {
+            const robloxId = await getRobloxId(entry.robloxUsername);
+            if (robloxId) {
+              robloxImg = await getRobloxAvatarURL(robloxId);
+            }
+          }
 
-      await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/saveAvatars", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          discordId: DISCORD_ID,
-          robloxUsername: roblox || null,
-          minecraftUsername: minecraft || null,
-          robloxAvatarUrl: robloxAvatar,
-          minecraftAvatarUrl: minecraftAvatar,
-          timestamp: new Date().toISOString(),
-        }),
-      });
+          const minecraftImg = entry.minecraftUsername
+            ? `https://minotar.net/avatar/${entry.minecraftUsername}/100`
+            : "";
 
-      loadAvatars();
-    };
-
-    const loadAvatars = async () => {
-      const res = await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/getAvatars");
-      const avatars = await res.json();
-
-      const container = document.getElementById("avatarsGrid");
-      container.innerHTML = "";
-
-      avatars.forEach((user) => {
-        const card = document.createElement("div");
-        card.className = "avatar-card";
-
-        const avatarUrl = user.robloxAvatarUrl || user.minecraftAvatarUrl || "https://placehold.co/100x100?text=?";
-
-        card.innerHTML = `
-          <h3>${user.discordTag}</h3>
-          <img src="${avatarUrl}" alt="avatar">
-          ${user.robloxUsername ? `<div>Roblox: ${user.robloxUsername}</div>` : ""}
-          ${user.minecraftUsername ? `<div>Minecraft: ${user.minecraftUsername}</div>` : ""}
-          ${user.timestamp ? `<div class="timestamp">Saved: ${new Date(user.timestamp).toLocaleDateString()}</div>` : ""}
-        `;
-
-        container.appendChild(card);
-      });
-    };
+          const avatarHTML = `
+            <div class="avatar-card">
+              <div class="discord-tag">${entry.discordTag}</div>
+              ${robloxImg ? `<img src="${robloxImg}" alt="Roblox Avatar" />` : ""}
+              ${minecraftImg ? `<img src="${minecraftImg}" alt="Minecraft Avatar" />` : ""}
+              ${entry.robloxUsername ? `<div class="username">Roblox: ${entry.robloxUsername}</div>` : ""}
+              ${entry.minecraftUsername ? `<div class="username">Minecraft: ${entry.minecraftUsername}</div>` : ""}
+            </div>
+          `;
+          container.innerHTML += avatarHTML;
+        }
+      } catch (err) {
+        console.error("Error loading avatars:", err);
+      }
+    }
 
     loadAvatars();
   </script>
