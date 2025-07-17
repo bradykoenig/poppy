@@ -1,35 +1,111 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-  getFirestore, collection, doc, onSnapshot, setDoc, addDoc, deleteDoc
+  getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+// Firebase init
 const firebaseConfig = {
   apiKey: "AIzaSyBOCaso0cw72WxrObQTOlcwSXzEVV2HP7U",
   authDomain: "poppy-d5573.firebaseapp.com",
   projectId: "poppy-d5573"
 };
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const canvas = document.getElementById("wheelCanvas");
-const ctx = canvas.getContext("2d");
-
+// Global state
 let games = [];
-let currentGame = null;
 let isSpinning = false;
 let angle = 0;
-let targetAngle = 0;
 let spinVelocity = 0;
+let targetAngle = 0;
+let currentGame = null;
 
-const spinDocRef = doc(db, "gameWheelMeta", "spinResult");
+const canvas = document.getElementById("wheel-canvas");
+const ctx = canvas.getContext("2d");
+
+const spinResultRef = doc(db, "gameWheelMeta", "spinResult");
 
 function debug(msg) {
-  document.getElementById("debug").textContent = msg;
+  const el = document.getElementById("debug");
+  if (el) el.textContent = msg;
 }
 
+// Realtime game list
+onSnapshot(collection(db, "gameWheel"), (snapshot) => {
+  games = [];
+  snapshot.forEach(doc => games.push({ id: doc.id, ...doc.data() }));
+  drawWheel();
+});
+
+// Realtime spin watcher
+onSnapshot(spinResultRef, (docSnap) => {
+  const result = docSnap.data();
+  if (!result || !result.game) return;
+
+  const index = games.findIndex(g => g.id === result.id);
+  if (index !== -1) {
+    currentGame = result;
+    spinToIndex(index);
+  }
+});
+
+// Add game
+window.submitGame = async function () {
+  const input = document.getElementById("gameInput");
+  const name = input.value.trim();
+  const user = JSON.parse(localStorage.getItem("discordUser"));
+
+  if (!user) return debug("⚠️ You must be logged in with Discord.");
+  if (!name) return debug("⚠️ Game name cannot be empty.");
+
+  try {
+    await addDoc(collection(db, "gameWheel"), {
+      game: name,
+      user: user.username + "#" + user.discriminator
+    });
+    debug("✅ Game added.");
+    input.value = "";
+  } catch (err) {
+    console.error("Error adding game:", err);
+    debug("❌ Failed to add game.");
+  }
+};
+
+// Spin
+window.spinWheel = async function () {
+  if (games.length === 0 || isSpinning) {
+    debug("❌ Can't spin yet");
+    return;
+  }
+
+  const index = Math.floor(Math.random() * games.length);
+  const selected = games[index];
+  try {
+    await setDoc(spinResultRef, selected);
+  } catch (err) {
+    console.error("Failed to set spin result", err);
+    debug("❌ Spin failed");
+  }
+};
+
+window.removeGame = async function () {
+  if (!currentGame) return;
+  try {
+    await deleteDoc(doc(db, "gameWheel", currentGame.id));
+    await setDoc(spinResultRef, {}); // Clear result
+  } catch (err) {
+    console.error("Failed to remove", err);
+  }
+};
+
+window.keepGame = async function () {
+  await setDoc(spinResultRef, {}); // Just clears the spin result
+};
+
+// Drawing the wheel
 function drawWheel() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
   if (games.length === 0) {
     ctx.fillStyle = "#fff";
     ctx.font = "20px Outfit";
@@ -37,25 +113,25 @@ function drawWheel() {
     return;
   }
 
-  const cx = canvas.width / 2;
-  const cy = canvas.height / 2;
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
   const radius = 200;
-  const angleStep = (2 * Math.PI) / games.length;
+  const segmentAngle = (2 * Math.PI) / games.length;
 
   for (let i = 0; i < games.length; i++) {
-    const start = angle + i * angleStep;
-    const end = start + angleStep;
+    const startAngle = angle + i * segmentAngle;
+    const endAngle = startAngle + segmentAngle;
 
     ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.arc(cx, cy, radius, start, end);
+    ctx.moveTo(centerX, centerY);
+    ctx.arc(centerX, centerY, radius, startAngle, endAngle);
     ctx.closePath();
     ctx.fillStyle = `hsl(${(i * 360) / games.length}, 70%, 50%)`;
     ctx.fill();
 
     ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(start + angleStep / 2);
+    ctx.translate(centerX, centerY);
+    ctx.rotate(startAngle + segmentAngle / 2);
     ctx.fillStyle = "#fff";
     ctx.font = "14px Outfit";
     ctx.textAlign = "right";
@@ -66,20 +142,21 @@ function drawWheel() {
   // Arrow
   ctx.fillStyle = "white";
   ctx.beginPath();
-  ctx.moveTo(cx - 10, 0);
-  ctx.lineTo(cx + 10, 0);
-  ctx.lineTo(cx, 20);
+  ctx.moveTo(centerX - 10, 0);
+  ctx.lineTo(centerX + 10, 0);
+  ctx.lineTo(centerX, 20);
   ctx.fill();
 }
 
-// Animation loop
 function spinToIndex(index) {
-  const seg = (2 * Math.PI) / games.length;
-  const stop = (3 * Math.PI / 2) - (index * seg) + seg / 2;
-  const extra = 5 * 2 * Math.PI;
-  targetAngle = stop + extra;
+  if (games.length === 0 || index < 0) return;
 
-  spinVelocity = 0.3;
+  const segmentAngle = (2 * Math.PI) / games.length;
+  const stopAngle = (3 * Math.PI / 2) - (index * segmentAngle) + (segmentAngle / 2);
+  const extraSpins = 6 * 2 * Math.PI;
+  targetAngle = stopAngle + extraSpins;
+
+  spinVelocity = 0.25;
   isSpinning = true;
   requestAnimationFrame(animateSpin);
 }
@@ -93,7 +170,6 @@ function animateSpin() {
   if (angle >= targetAngle) {
     angle = targetAngle % (2 * Math.PI);
     isSpinning = false;
-
     document.getElementById("selectedGame").textContent =
       `🎯 Selected: ${currentGame.game} (by ${currentGame.user})`;
     document.getElementById("postSpinActions").style.display = "flex";
@@ -102,75 +178,3 @@ function animateSpin() {
   drawWheel();
   if (isSpinning) requestAnimationFrame(animateSpin);
 }
-
-// Real-time sync
-onSnapshot(collection(db, "gameWheel"), (snap) => {
-  games = [];
-  snap.forEach(doc => games.push({ id: doc.id, ...doc.data() }));
-  drawWheel();
-});
-
-onSnapshot(spinDocRef, (snap) => {
-  const data = snap.data();
-  if (!data || !data.id) {
-    currentGame = null;
-    document.getElementById("selectedGame").textContent = "";
-    document.getElementById("postSpinActions").style.display = "none";
-    return;
-  }
-
-  const index = games.findIndex(g => g.id === data.id);
-  if (index !== -1) {
-    currentGame = data;
-    spinToIndex(index);
-  }
-});
-
-// Buttons
-document.getElementById("submitBtn").onclick = async () => {
-  const input = document.getElementById("gameInput");
-  const name = input.value.trim();
-  const user = JSON.parse(localStorage.getItem("discordUser"));
-
-  if (!user || !user.username) return debug("⚠️ Login required");
-  if (!name) return debug("⚠️ Game name required");
-
-  try {
-    await addDoc(collection(db, "gameWheel"), {
-      game: name,
-      user: `${user.username}#${user.discriminator}`
-    });
-    input.value = "";
-    debug("✅ Game added!");
-  } catch (err) {
-    console.error("Error adding game:", err);
-    debug("❌ Failed to add.");
-  }
-};
-
-document.getElementById("spinBtn").onclick = async () => {
-  if (isSpinning || games.length === 0) return debug("❌ Can't spin yet");
-  const index = Math.floor(Math.random() * games.length);
-  const game = games[index];
-  try {
-    await setDoc(spinDocRef, game);
-    debug("🎯 Spin initiated");
-  } catch (err) {
-    console.error("Spin error:", err);
-    debug("❌ Spin failed");
-  }
-};
-
-document.getElementById("removeBtn").onclick = async () => {
-  if (!currentGame) return;
-  try {
-    await deleteDoc(doc(db, "gameWheel", currentGame.id));
-    await setDoc(spinDocRef, {});
-  } catch (err) {
-    console.error("Remove failed:", err);
-  }
-};
-
-document.getElementById("keepBtn").onclick = async () => {
-  await setDoc(spinDocRef, {});
-};

@@ -2,44 +2,76 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Game Wheel - Poppy Pooperz</title>
+  <title>Game Wheel</title>
   <link rel="stylesheet" href="style.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet"/>
+  <style>
+    body {
+      background: #0f0f0f;
+      color: white;
+      font-family: 'Outfit', sans-serif;
+      text-align: center;
+      padding-top: 40px;
+    }
+    canvas {
+      margin: 30px auto;
+      display: block;
+      background: #111;
+      border-radius: 50%;
+      box-shadow: 0 0 25px #8833ff44;
+    }
+    #debug {
+      margin-top: 10px;
+      font-size: 15px;
+      color: #ccc;
+    }
+    #selectedGame {
+      margin: 12px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    #postSpinActions {
+      display: none;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 12px;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      margin: 5px;
+    }
+    input {
+      background: #222;
+      color: white;
+      width: 300px;
+    }
+    button {
+      background: #8a4dff;
+      color: white;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-  <header>
-    <div class="logo">
-      <img src="assets/logo.png" alt="Logo" />
-      Poppy Pooperz
-    </div>
-    <nav>
-      <a href="home.html">Home</a>
-      <a href="member-catalog.html">Avatar Catalog</a>
-      <a href="game-wheel.html" class="active">Game Wheel</a>
-      <a href="quote-wall.html">Quote Wall</a>
-      <a href="who-is-online.html">Who's Online</a>
-    </nav>
-  </header>
 
-  <main class="wheel-page">
-    <h1>🎮 Game Wheel</h1>
+  <h1><span style="color:#8a4dff;">🎮 Game Wheel</span></h1>
 
-    <div class="wheel-wrapper">
-      <input id="gameInput" type="text" placeholder="Enter a game name..." />
-      <button id="submitBtn">Submit</button>
+  <input id="gameInput" type="text" placeholder="Enter a game name..." />
+  <button onclick="submitGame()">Submit</button>
 
-      <canvas id="wheelCanvas" width="400" height="400"></canvas>
-      <button id="spinBtn">🎲 Spin the Wheel</button>
+  <canvas id="wheel-canvas" width="400" height="400"></canvas>
 
-      <div id="selectedGame" class="selected-game"></div>
-      <div class="keep-remove" id="postSpinActions" style="display:none;">
-        <button id="removeBtn">❌ Remove</button>
-        <button id="keepBtn">✅ Keep</button>
-      </div>
+  <button onclick="spinWheel()">🎲 Spin the Wheel</button>
 
-      <p id="debug" style="margin-top: 20px; color: #888; font-size: 14px;"></p>
-    </div>
-  </main>
+  <div id="selectedGame"></div>
+  <div id="postSpinActions">
+    <button onclick="keepGame()">Keep</button>
+    <button onclick="removeGame()">Remove</button>
+  </div>
+
+  <div id="debug"></div>
 
   <script type="module" src="game-wheel.js"></script>
 </body>
