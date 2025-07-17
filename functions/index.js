@@ -1,10 +1,7 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const cors = require("cors")({ origin: true });
-const { setDoc, doc, serverTimestamp } = require("firebase-admin/firestore");
-
-// Fix for node-fetch v3+ (ESM-only)
-const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args));
+const fetch = require("node-fetch");
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -13,13 +10,28 @@ const CLIENT_ID = "1395218126211125259";
 const CLIENT_SECRET = "3pCcUvTR2Z0mPmzAOPHUKTGOzTMbWPk2";
 const REDIRECT_URI = "https://poppypooperz.com/oauth-callback.html";
 
-// OAuth2 token exchange
+// Helper to fetch Roblox User ID
+async function getRobloxUserId(username) {
+  try {
+    const res = await fetch("https://users.roblox.com/v1/usernames/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ usernames: [username], excludeBannedUsers: true })
+    });
+
+    const data = await res.json();
+    return data?.data?.[0]?.id || null;
+  } catch (err) {
+    console.error("Error fetching Roblox ID:", err);
+    return null;
+  }
+}
+
+// Discord OAuth2 exchange
 exports.exchangeCode = functions.https.onRequest((req, res) => {
   cors(req, res, async () => {
     const code = req.body.code;
-    if (!code) {
-      return res.status(400).json({ error: "Missing authorization code" });
-    }
+    if (!code) return res.status(400).json({ error: "Missing authorization code" });
 
     try {
       const params = new URLSearchParams();
@@ -37,10 +49,7 @@ exports.exchangeCode = functions.https.onRequest((req, res) => {
       });
 
       const tokenData = await tokenRes.json();
-      if (!tokenData.access_token) {
-        console.error("Token exchange failed:", tokenData);
-        return res.status(401).json({ error: "Token exchange failed", details: tokenData });
-      }
+      if (!tokenData.access_token) return res.status(401).json({ error: "Token exchange failed", details: tokenData });
 
       const access_token = tokenData.access_token;
 
@@ -67,26 +76,23 @@ exports.exchangeCode = functions.https.onRequest((req, res) => {
   });
 });
 
-// Save avatar data to Firestore
+// Save avatars
 exports.saveAvatars = functions.https.onRequest((req, res) => {
   cors(req, res, async () => {
     try {
-      if (req.method !== "POST") {
-        return res.status(405).json({ message: "Method Not Allowed" });
-      }
+      if (req.method !== "POST") return res.status(405).json({ message: "Method Not Allowed" });
 
       const { discordId, discordTag, robloxUsername, minecraftUsername } = req.body;
+      if (!discordId || !discordTag) return res.status(400).json({ message: "Missing Discord ID or Tag" });
 
-      if (!discordId || !discordTag) {
-        return res.status(400).json({ message: "Missing Discord ID or Tag" });
-      }
+      const robloxUserId = robloxUsername ? await getRobloxUserId(robloxUsername) : null;
 
       const userRef = db.collection("avatarCatalog").doc(discordId);
-
       await userRef.set({
         discordId,
         discordTag,
         robloxUsername: robloxUsername || null,
+        robloxUserId,
         minecraftUsername: minecraftUsername || null,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
@@ -99,21 +105,16 @@ exports.saveAvatars = functions.https.onRequest((req, res) => {
   });
 });
 
-// Get all saved avatars (public)
+// Get avatars
 exports.getAvatars = functions.https.onRequest((req, res) => {
   cors(req, res, async () => {
     try {
-      const snapshot = await db.collection("avatarCatalog").get();
-
-      const avatars = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-
-      return res.status(200).json(avatars);
+      const snapshot = await db.collection("avatarCatalog").orderBy("updatedAt", "desc").get();
+      const entries = snapshot.docs.map(doc => doc.data());
+      return res.status(200).json(entries);
     } catch (error) {
       console.error("Error fetching avatars:", error);
-      return res.status(500).json({ message: "Internal server error" });
+      return res.status(500).json({ message: "Internal server error." });
     }
   });
 });
