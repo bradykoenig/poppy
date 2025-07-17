@@ -30,18 +30,27 @@ async function getRobloxUserId(username) {
 
 // Get Roblox Avatar Image with retry logic
 async function getAvatarImageUrl(userId, retries = 5) {
-  for (let attempt = 0; attempt < retries; attempt++) {
-    const response = await fetch(`https://thumbnails.roblox.com/v1/users/avatar-3d?userIds=${userId}&format=Png&isCircular=false&size=720x720`);
-    if (!response.ok) throw new Error(`Roblox avatar fetch failed: ${response.status}`);
+  const avatar3DUrl = `https://thumbnails.roblox.com/v1/users/avatar-3d?userIds=${userId}&format=png&isCircular=false&size=720x720`;
 
+  for (let attempt = 0; attempt < retries; attempt++) {
+    const response = await fetch(avatar3DUrl);
     const json = await response.json();
     const data = json.data?.[0];
-    if (data?.state === "Completed" && data.imageUrl) return data.imageUrl;
 
-    await new Promise(res => setTimeout(res, 1000)); // Wait before retrying
+    if (data?.state === "Completed" && data.imageUrl) {
+      return data.imageUrl;
+    }
+
+    await new Promise(res => setTimeout(res, 1000));
   }
-  return null; // Avatar not ready
+
+  // Fallback to avatar headshot
+  const fallbackUrl = `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=720x720&format=png&isCircular=false`;
+  const fallbackRes = await fetch(fallbackUrl);
+  const fallbackJson = await fallbackRes.json();
+  return fallbackJson.data?.[0]?.imageUrl || null;
 }
+
 
 // Cloud Function: Get Roblox Avatar
 exports.getRobloxAvatar = functions.https.onRequest((req, res) => {
@@ -75,13 +84,20 @@ exports.getMinecraftAvatar = functions.https.onRequest((req, res) => {
       const username = req.query.username;
       if (!username) return res.status(400).json({ error: "Missing username" });
 
-      const avatarUrl = `https://crafatar.com/renders/body/${encodeURIComponent(username)}?size=720`;
+      // Step 1: Resolve UUID from Mojang
+      const uuidRes = await fetch(`https://api.mojang.com/users/profiles/minecraft/${encodeURIComponent(username)}`);
+      if (uuidRes.status === 204) {
+        return res.status(404).json({ error: "Minecraft username not found" });
+      }
+      const { id: uuid } = await uuidRes.json();
 
-      // Test the image URL to make sure it exists
-      const testResponse = await fetch(avatarUrl);
-      console.log(`Checking Crafatar URL: ${avatarUrl} | Status: ${testResponse.status}`);
+      // Step 2: Get Crafatar image using UUID
+      const avatarUrl = `https://crafatar.com/renders/body/${uuid}?size=720`;
+      const testRes = await fetch(avatarUrl);
 
-      if (!testResponse.ok) {
+      console.log(`Checking Crafatar URL: ${avatarUrl} | Status: ${testRes.status}`);
+
+      if (!testRes.ok) {
         return res.status(404).json({ error: "Minecraft avatar not found" });
       }
 
@@ -92,6 +108,7 @@ exports.getMinecraftAvatar = functions.https.onRequest((req, res) => {
     }
   });
 });
+
 
 
 // Cloud Function: Save Discord + Avatar info
