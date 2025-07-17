@@ -168,19 +168,16 @@
     }
 
     async function getRobloxId(username) {
-    try {
-        const res = await fetch("https://users.roblox.com/v1/usernames/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ usernames: [username] })
-        });
-        const data = await res.json();
-        return data.data && data.data.length > 0 ? data.data[0].id : null;
-    } catch (e) {
-        console.warn("Failed to fetch Roblox ID:", e);
-        return null;
+        try {
+            const res = await fetch(`https://us-central1-poppy-d5573.cloudfunctions.net/getRobloxId?username=${encodeURIComponent(username)}`);
+            const data = await res.json();
+            return data.id || null;
+        } catch (e) {
+            console.warn("Failed to fetch Roblox ID from Firebase:", e);
+            return null;
+        }
     }
-    }
+
 
     async function loadAvatars() {
   try {

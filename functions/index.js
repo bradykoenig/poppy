@@ -105,6 +105,32 @@ exports.saveAvatars = functions.https.onRequest((req, res) => {
   });
 });
 
+exports.getRobloxId = functions.https.onRequest(async (req, res) => {
+  try {
+    const username = req.query.username;
+    if (!username) return res.status(400).json({ error: "Username required" });
+
+    const robloxRes = await fetch("https://users.roblox.com/v1/usernames/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ usernames: [username] })
+    });
+
+    const data = await robloxRes.json();
+    const user = data.data && data.data.length > 0 ? data.data[0] : null;
+
+    if (user) {
+      res.json({ id: user.id });
+    } else {
+      res.status(404).json({ error: "User not found" });
+    }
+  } catch (err) {
+    console.error("Roblox lookup failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
 // Get avatars
 exports.getAvatars = functions.https.onRequest((req, res) => {
   cors(req, res, async () => {
