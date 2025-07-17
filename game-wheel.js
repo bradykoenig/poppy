@@ -1,111 +1,97 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-  getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, setDoc
+  getFirestore, collection, addDoc, deleteDoc,
+  doc, setDoc, onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// Firebase init
-const firebaseConfig = {
+const app = initializeApp({
   apiKey: "AIzaSyBOCaso0cw72WxrObQTOlcwSXzEVV2HP7U",
   authDomain: "poppy-d5573.firebaseapp.com",
   projectId: "poppy-d5573"
-};
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+});
 
-// Global state
+const db = getFirestore(app);
+const canvas = document.getElementById("wheel-canvas");
+const ctx = canvas.getContext("2d");
+
 let games = [];
+let currentGame = null;
 let isSpinning = false;
 let angle = 0;
 let spinVelocity = 0;
 let targetAngle = 0;
-let currentGame = null;
 
-const canvas = document.getElementById("wheel-canvas");
-const ctx = canvas.getContext("2d");
-
-const spinResultRef = doc(db, "gameWheelMeta", "spinResult");
+const spinRef = doc(db, "gameWheelMeta", "spinResult");
 
 function debug(msg) {
-  const el = document.getElementById("debug");
-  if (el) el.textContent = msg;
+  const d = document.getElementById("debug");
+  if (d) d.textContent = "🔧 DEBUG: " + msg;
 }
 
-// Realtime game list
-onSnapshot(collection(db, "gameWheel"), (snapshot) => {
+// 🔄 Sync Game List
+onSnapshot(collection(db, "gameWheel"), (snap) => {
   games = [];
-  snapshot.forEach(doc => games.push({ id: doc.id, ...doc.data() }));
+  snap.forEach(doc => games.push({ id: doc.id, ...doc.data() }));
   drawWheel();
 });
 
-// Realtime spin watcher
-onSnapshot(spinResultRef, (docSnap) => {
-  const result = docSnap.data();
+// 🔄 Sync Spin Result
+onSnapshot(spinRef, (snap) => {
+  const result = snap.data();
   if (!result || !result.game) return;
 
   const index = games.findIndex(g => g.id === result.id);
-  if (index !== -1) {
-    currentGame = result;
-    spinToIndex(index);
-  }
+  if (index === -1) return;
+
+  currentGame = result;
+  debug(`🎯 Spin result updated! Index: ${index}`);
+  spinToIndex(index);
 });
 
-// Add game
 window.submitGame = async function () {
   const input = document.getElementById("gameInput");
   const name = input.value.trim();
   const user = JSON.parse(localStorage.getItem("discordUser"));
 
-  if (!user) return debug("⚠️ You must be logged in with Discord.");
-  if (!name) return debug("⚠️ Game name cannot be empty.");
+  if (!name || !user) return debug("⚠️ Enter a game and be logged in.");
 
   try {
     await addDoc(collection(db, "gameWheel"), {
       game: name,
-      user: user.username + "#" + user.discriminator
+      user: `${user.username}#${user.discriminator}`
     });
-    debug("✅ Game added.");
     input.value = "";
+    debug("✅ Game added.");
   } catch (err) {
-    console.error("Error adding game:", err);
+    console.error(err);
     debug("❌ Failed to add game.");
   }
 };
 
-// Spin
 window.spinWheel = async function () {
   if (games.length === 0 || isSpinning) {
     debug("❌ Can't spin yet");
     return;
   }
-
   const index = Math.floor(Math.random() * games.length);
-  const selected = games[index];
-  try {
-    await setDoc(spinResultRef, selected);
-  } catch (err) {
-    console.error("Failed to set spin result", err);
-    debug("❌ Spin failed");
-  }
+  await setDoc(spinRef, games[index]);
 };
 
 window.removeGame = async function () {
   if (!currentGame) return;
-  try {
-    await deleteDoc(doc(db, "gameWheel", currentGame.id));
-    await setDoc(spinResultRef, {}); // Clear result
-  } catch (err) {
-    console.error("Failed to remove", err);
-  }
+  await deleteDoc(doc(db, "gameWheel", currentGame.id));
+  await setDoc(spinRef, {});
+  currentGame = null;
 };
 
 window.keepGame = async function () {
-  await setDoc(spinResultRef, {}); // Just clears the spin result
+  await setDoc(spinRef, {});
+  currentGame = null;
 };
 
-// Drawing the wheel
+// 🎨 Drawing & Spinning
 function drawWheel() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
   if (games.length === 0) {
     ctx.fillStyle = "#fff";
     ctx.font = "20px Outfit";
@@ -116,22 +102,22 @@ function drawWheel() {
   const centerX = canvas.width / 2;
   const centerY = canvas.height / 2;
   const radius = 200;
-  const segmentAngle = (2 * Math.PI) / games.length;
+  const segAngle = (2 * Math.PI) / games.length;
 
   for (let i = 0; i < games.length; i++) {
-    const startAngle = angle + i * segmentAngle;
-    const endAngle = startAngle + segmentAngle;
+    const start = angle + i * segAngle;
+    const end = start + segAngle;
 
     ctx.beginPath();
     ctx.moveTo(centerX, centerY);
-    ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+    ctx.arc(centerX, centerY, radius, start, end);
     ctx.closePath();
-    ctx.fillStyle = `hsl(${(i * 360) / games.length}, 70%, 50%)`;
+    ctx.fillStyle = `hsl(${(i * 360) / games.length}, 70%, 60%)`;
     ctx.fill();
 
     ctx.save();
     ctx.translate(centerX, centerY);
-    ctx.rotate(startAngle + segmentAngle / 2);
+    ctx.rotate(start + segAngle / 2);
     ctx.fillStyle = "#fff";
     ctx.font = "14px Outfit";
     ctx.textAlign = "right";
@@ -149,14 +135,11 @@ function drawWheel() {
 }
 
 function spinToIndex(index) {
-  if (games.length === 0 || index < 0) return;
-
-  const segmentAngle = (2 * Math.PI) / games.length;
-  const stopAngle = (3 * Math.PI / 2) - (index * segmentAngle) + (segmentAngle / 2);
-  const extraSpins = 6 * 2 * Math.PI;
-  targetAngle = stopAngle + extraSpins;
-
-  spinVelocity = 0.25;
+  const segAngle = (2 * Math.PI) / games.length;
+  const stopAngle = (3 * Math.PI / 2) - (index * segAngle) + (segAngle / 2);
+  const extra = 6 * 2 * Math.PI;
+  targetAngle = stopAngle + extra;
+  spinVelocity = 0.2;
   isSpinning = true;
   requestAnimationFrame(animateSpin);
 }
@@ -170,11 +153,14 @@ function animateSpin() {
   if (angle >= targetAngle) {
     angle = targetAngle % (2 * Math.PI);
     isSpinning = false;
+    drawWheel();
+
     document.getElementById("selectedGame").textContent =
       `🎯 Selected: ${currentGame.game} (by ${currentGame.user})`;
     document.getElementById("postSpinActions").style.display = "flex";
+    return;
   }
 
   drawWheel();
-  if (isSpinning) requestAnimationFrame(animateSpin);
+  requestAnimationFrame(animateSpin);
 }
