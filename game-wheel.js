@@ -94,8 +94,16 @@ window.submitGame = async function () {
 // ✅ Trigger spin
 window.spinWheel = async function () {
   console.log("🟣 spinWheel() clicked");
-  if (games.length === 0 || isSpinning) {
-    console.log("❌ No games or already spinning");
+
+  if (isSpinning) {
+    console.log("❌ Already spinning");
+    return;
+  }
+
+  // Wait if games list is still loading
+  if (games.length === 0) {
+    console.log("⏳ Waiting for games to load...");
+    setTimeout(window.spinWheel, 100);
     return;
   }
 
@@ -106,7 +114,6 @@ window.spinWheel = async function () {
     await setDoc(spinResultRef, selected);
     console.log("✅ Spin result set:", selected);
 
-    // 🟢 Force local spin immediately
     currentGame = selected;
     spinToIndex(index);
   } catch (err) {
@@ -114,6 +121,7 @@ window.spinWheel = async function () {
     debug("❌ Failed to spin.");
   }
 };
+
 
 
 // ✅ Remove game
