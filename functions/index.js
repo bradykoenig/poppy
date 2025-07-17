@@ -1,6 +1,8 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const cors = require("cors")({ origin: true });
+const { fetch } = require("undici");
+
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -16,8 +18,15 @@ async function getRobloxUserId(username) {
   if (!response.ok) throw new Error(`Roblox username lookup failed: ${response.status}`);
   const json = await response.json();
   const user = json.data?.[0];
-  return user ? user.id : null;
+
+  if (!user || !user.id) {
+    console.warn("Roblox user not found or missing ID for:", username);
+    return null;
+  }
+
+  return user.id;
 }
+
 
 // Get Roblox Avatar Image with retry logic
 async function getAvatarImageUrl(userId, retries = 5) {
@@ -41,7 +50,10 @@ exports.getRobloxAvatar = functions.https.onRequest((req, res) => {
       const username = req.query.username;
       if (!username) return res.status(400).json({ error: "Missing username" });
 
+      console.log("Looking up Roblox ID for:", username);
       const userId = await getRobloxUserId(username);
+      console.log("Resolved ID:", userId);
+
       if (!userId) return res.status(404).json({ error: "Roblox user not found" });
 
       const imageUrl = await getAvatarImageUrl(userId);
@@ -55,6 +67,7 @@ exports.getRobloxAvatar = functions.https.onRequest((req, res) => {
   });
 });
 
+
 // Cloud Function: Get Minecraft Avatar
 exports.getMinecraftAvatar = functions.https.onRequest((req, res) => {
   cors(req, res, async () => {
@@ -62,10 +75,15 @@ exports.getMinecraftAvatar = functions.https.onRequest((req, res) => {
       const username = req.query.username;
       if (!username) return res.status(400).json({ error: "Missing username" });
 
-      const avatarUrl = `https://minotar.net/render/${encodeURIComponent(username)}/720.png`;
-      const testResponse = await fetch(avatarUrl);
+      const avatarUrl = `https://crafatar.com/renders/body/${encodeURIComponent(username)}?size=720`;
 
-      if (!testResponse.ok) return res.status(404).json({ error: "Minecraft avatar not found" });
+      // Test the image URL to make sure it exists
+      const testResponse = await fetch(avatarUrl);
+      console.log(`Checking Crafatar URL: ${avatarUrl} | Status: ${testResponse.status}`);
+
+      if (!testResponse.ok) {
+        return res.status(404).json({ error: "Minecraft avatar not found" });
+      }
 
       return res.status(200).json({ imageUrl: avatarUrl });
     } catch (err) {
@@ -74,6 +92,7 @@ exports.getMinecraftAvatar = functions.https.onRequest((req, res) => {
     }
   });
 });
+
 
 // Cloud Function: Save Discord + Avatar info
 exports.saveAvatars = functions.https.onRequest((req, res) => {
