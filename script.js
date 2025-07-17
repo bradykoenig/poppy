@@ -23,3 +23,25 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 });
+
+async function updatePresence() {
+  const user = JSON.parse(localStorage.getItem("discordUser"));
+  if (!user) return;
+
+  try {
+    await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/updatePresence", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        discordId: user.id,
+        discordTag: `${user.username}#${user.discriminator}`
+      })
+    });
+  } catch (err) {
+    console.error("Presence update failed:", err);
+  }
+}
+
+updatePresence();
+setInterval(updatePresence, 60000); // update every minute
+
