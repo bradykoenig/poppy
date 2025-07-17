@@ -9,15 +9,46 @@
 <body>
   <div class="container">
     <h1>Welcome to Poppy Pooperz</h1>
-    <div class="login-container">
+
+    <div class="login-container" id="login-container">
       <button class="discord-login-btn" onclick="loginWithDiscord()">
         <img src="assets/discord-icon-white.svg" alt="Discord" class="discord-icon" />
         <span>Sign in with Discord</span>
       </button>
     </div>
-    <div id="user-info" class="user-info"></div>
+
+    <div id="user-info" class="user-info" style="display:none;"></div>
+    <button id="sign-out-btn" style="display:none;" onclick="signOut()">Sign Out</button>
+
+    <div class="nav-links" style="margin-top: 30px;">
+      <a href="home.html">Home</a> |
+      <a href="member-catalog.html">Member Avatar Catalog</a> |
+      <a href="game-wheel.html">Game Wheel</a> |
+      <a href="quote-wall.html">Quote Wall</a> |
+      <a href="who-is-online.html">Who is on the Website</a>
+    </div>
   </div>
 
-  <script src="script.js"></script>
+  <script>
+    function loginWithDiscord() {
+      const clientId = "1395218126211125259";
+      const redirectUri = encodeURIComponent("https://poppypooperz.com/oauth-callback.html");
+      const scope = encodeURIComponent("identify guilds");
+      const discordAuthUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;
+      window.location.href = discordAuthUrl;
+    }
+
+    function signOut() {
+      localStorage.removeItem("discordUser");
+      window.location.reload();
+    }
+
+    // Auto-redirect if already signed in
+    const user = JSON.parse(localStorage.getItem("discordUser"));
+    if (user) {
+      // Redirect to home.html
+      window.location.href = "home.html";
+    }
+  </script>
 </body>
 </html>
