@@ -56,8 +56,16 @@ onSnapshot(spinResultRef, (docSnap) => {
     currentGame = null;
     document.getElementById("selectedGame").textContent = "";
     document.getElementById("postSpinActions").style.display = "none";
+    return;
+  }
+
+  const index = games.findIndex(g => g.id === result.id);
+  if (index !== -1) {
+    currentGame = result;
+    spinToIndex(index); // ✅ Always spin if we have a match
   }
 });
+
 
 window.submitGame = async function () {
   const input = document.getElementById("gameInput");
