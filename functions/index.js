@@ -203,6 +203,44 @@ exports.getAvatars = functions.https.onRequest((req, res) => {
   });
 });
 
+exports.saveQuote = functions.https.onRequest(async (req, res) => {
+  const { discordId, discordTag, quote } = req.body;
+  if (!discordId || !quote) {
+    return res.status(400).json({ message: "Missing data" });
+  }
+
+  try {
+    await admin.firestore().collection("quotes").add({
+      discordId,
+      discordTag,
+      quote,
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    res.status(200).json({ message: "Quote saved successfully!" });
+  } catch (err) {
+    console.error("Error saving quote:", err);
+    res.status(500).json({ message: "Server error while saving quote" });
+  }
+});
+
+
+exports.getQuotes = functions.https.onRequest(async (req, res) => {
+  try {
+    const snapshot = await admin.firestore()
+      .collection("quotes")
+      .orderBy("createdAt", "desc")
+      .get();
+
+    const quotes = snapshot.docs.map(doc => doc.data());
+    res.status(200).json(quotes);
+  } catch (err) {
+    console.error("Error getting quotes:", err);
+    res.status(500).json({ message: "Server error while fetching quotes" });
+  }
+});
+
+
 // Discord OAuth2 exchange
 exports.exchangeCode = functions.https.onRequest((req, res) => {
   cors(req, res, async () => {
