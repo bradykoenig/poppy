@@ -2,13 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Poppy Pooperz</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Welcome to Poppy Pooperz</h1>
-  <p>This is the start of your community hub.</p>
+  <div class="container">
+    <h1>Welcome to Poppy Pooperz</h1>
+    <div class="login-container">
+      <button class="discord-login-btn" onclick="loginWithDiscord()">
+        <img src="assets/discord-icon-white.svg" alt="Discord" class="discord-icon" />
+        <span>Sign in with Discord</span>
+      </button>
+    </div>
+    <div id="user-info" class="user-info"></div>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>
