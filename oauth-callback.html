@@ -23,13 +23,21 @@
     })
     .then(res => res.json())
     .then(data => {
-      console.log("Received from backend:", data);
+    console.log("Received from backend:", data);
 
-      const { access_token, user, guilds } = data;
+    // DEBUGGING: print raw object keys
+    console.log("Keys in response:", Object.keys(data));
 
-      if (!access_token || !user || !guilds) {
+    const { access_token, user, guilds } = data;
+
+    // Log each individually
+    console.log("access_token:", access_token);
+    console.log("user:", user);
+    console.log("guilds:", guilds);
+
+    if (!access_token || !user || !guilds) {
         throw new Error("Missing required data from backend.");
-      }
+    }
 
       localStorage.setItem("discordUser", JSON.stringify(user));
 

@@ -52,6 +52,10 @@ exports.exchangeCode = functions.https.onRequest((req, res) => {
         return res.status(500).json({ error: "Incomplete user or guild data", user, guilds });
       }
 
+      console.log("Final Response:");
+      console.log({ access_token, user, guilds });
+
+
       res.json({ access_token, user, guilds });
 
     } catch (err) {
