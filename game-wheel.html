@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Game Wheel - Poppy Pooperz</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet"/>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <img src="assets/logo.png" alt="Poppy Pooperz Logo" />
+      Poppy Pooperz
+    </div>
+    <nav>
+      <a href="home.html">Home</a>
+      <a href="member-catalog.html">Avatar Catalog</a>
+      <a href="game-wheel.html" class="active">Game Wheel</a>
+      <a href="quote-wall.html">Quote Wall</a>
+      <a href="who-is-online.html">Who's Online</a>
+    </nav>
+  </header>
+
+  <main class="wheel-page">
+    <h1>🎮 Game Wheel</h1>
+
+    <div id="debug" style="margin-bottom: 10px; font-size: 14px; color: #aaa;"></div>
+
+    <div class="wheel-wrapper">
+      <input type="text" id="gameInput" placeholder="Enter a game name..." />
+      <button onclick="submitGame()">Submit</button>
+
+      <canvas id="wheel-canvas" width="400" height="400"></canvas>
+
+      <button class="spin-btn" onclick="spinWheel()">🎲 Spin the Wheel</button>
+
+      <div id="selectedGame" class="selected-game"></div>
+
+      <div class="keep-remove" id="postSpinActions" style="display:none;">
+        <button onclick="removeGame()">❌ Remove</button>
+        <button onclick="keepGame()">✅ Keep</button>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="game-wheel.js"></script>
+</body>
+</html>
