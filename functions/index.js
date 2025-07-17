@@ -2,6 +2,7 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const cors = require("cors")({ origin: true });
 const { fetch } = require("undici");
+const axios = require("axios");
 
 
 admin.initializeApp();
@@ -74,6 +75,47 @@ exports.getRobloxAvatar = functions.https.onRequest((req, res) => {
       return res.status(500).json({ error: err.message });
     }
   });
+});
+
+exports.discordLogin = functions.https.onRequest(async (req, res) => {
+  const { accessToken } = req.body;
+
+  if (!accessToken) {
+    return res.status(400).json({ error: "Missing access token" });
+  }
+
+  try {
+    // Get Discord user
+    const userRes = await axios.get("https://discord.com/api/users/@me", {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+
+    const discordUser = userRes.data;
+    const uid = `discord:${discordUser.id}`;
+
+    // Create or update Firebase user
+    await admin.auth().updateUser(uid, {
+      displayName: `${discordUser.username}#${discordUser.discriminator}`,
+      photoURL: `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
+    }).catch(async err => {
+      if (err.code === "auth/user-not-found") {
+        await admin.auth().createUser({
+          uid,
+          displayName: `${discordUser.username}#${discordUser.discriminator}`,
+          photoURL: `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
+        });
+      } else {
+        throw err;
+      }
+    });
+
+    // Create custom token
+    const token = await admin.auth().createCustomToken(uid);
+    return res.json({ firebaseToken: token, user: discordUser });
+  } catch (err) {
+    console.error("Error generating Firebase token:", err);
+    return res.status(500).json({ error: "Token generation failed" });
+  }
 });
 
 
