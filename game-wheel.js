@@ -3,7 +3,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
-// ✅ Firebase config for Firestore only
+// ✅ Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyBOCaso0cw72WxrObQTOlcwSXzEVV2HP7U",
   authDomain: "poppy-d5573.firebaseapp.com",
@@ -13,7 +13,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 🎯 Game logic
+// 🟣 Game logic
 const canvas = document.getElementById("wheel-canvas");
 const ctx = canvas.getContext("2d");
 let games = [];
@@ -28,9 +28,10 @@ let latestSpinResult = null;
 function debug(msg) {
   const el = document.getElementById("debug");
   if (el) el.textContent = msg;
+  console.log("🔧 DEBUG:", msg);
 }
 
-// 🟣 Watch games live
+// 🟢 Live update: Games list
 onSnapshot(collection(db, "gameWheel"), (snapshot) => {
   games = [];
   snapshot.forEach(doc => {
@@ -38,6 +39,7 @@ onSnapshot(collection(db, "gameWheel"), (snapshot) => {
   });
   drawWheel();
 
+  // Check for spinResult
   if (latestSpinResult && latestSpinResult.game) {
     const index = games.findIndex(g => g.id === latestSpinResult.id);
     if (index !== -1) {
@@ -47,34 +49,29 @@ onSnapshot(collection(db, "gameWheel"), (snapshot) => {
   }
 });
 
-// 🟡 Watch spin result
+// 🟡 Live update: Spin trigger
 onSnapshot(spinResultRef, (docSnap) => {
   const result = docSnap.data();
   latestSpinResult = result;
 
   if (!result || !result.game) {
+    console.log("🧼 Spin cleared");
     currentGame = null;
     document.getElementById("selectedGame").textContent = "";
     document.getElementById("postSpinActions").style.display = "none";
     return;
   }
 
-  // Wait until games[] is populated
-  const waitForGames = () => {
-    const index = games.findIndex(g => g.id === result.id);
-    if (index !== -1) {
-      currentGame = result;
-      spinToIndex(index);
-    } else {
-      // Retry after short delay until the game list is synced
-      setTimeout(waitForGames, 100);
-    }
-  };
+  const index = games.findIndex(g => g.id === result.id);
+  console.log("🎯 Spin result updated! Index:", index, result);
 
-  waitForGames();
+  if (index !== -1) {
+    currentGame = result;
+    spinToIndex(index);
+  } else {
+    console.warn("⚠️ Game not found in current list");
+  }
 });
-
-
 
 window.submitGame = async function () {
   const input = document.getElementById("gameInput");
@@ -92,21 +89,26 @@ window.submitGame = async function () {
     debug("✅ Game added.");
     input.value = "";
   } catch (err) {
-    console.error("Error adding game:", err);
-    debug("❌ Failed to add game. Try again.");
+    console.error("❌ Error adding game:", err);
+    debug("❌ Failed to add game.");
   }
 };
 
 window.spinWheel = async function () {
-  if (games.length === 0 || isSpinning) return;
+  console.log("🟣 spinWheel() clicked");
+  if (games.length === 0 || isSpinning) {
+    console.warn("❌ No games or already spinning");
+    return;
+  }
 
   const index = Math.floor(Math.random() * games.length);
   const selected = games[index];
 
   try {
+    console.log("✅ Writing spinResult:", selected);
     await setDoc(spinResultRef, selected);
   } catch (err) {
-    console.error("Error setting spin result:", err);
+    console.error("❌ Error setting spin result:", err);
     debug("❌ Failed to spin.");
   }
 };
@@ -117,7 +119,7 @@ window.removeGame = async function () {
     await deleteDoc(doc(db, "gameWheel", currentGame.id));
     await setDoc(spinResultRef, {});
   } catch (err) {
-    console.error("Failed to remove game:", err);
+    console.error("❌ Failed to remove game:", err);
   }
 };
 
@@ -125,6 +127,7 @@ window.keepGame = async function () {
   await setDoc(spinResultRef, {});
 };
 
+// 🧠 Draw wheel
 function drawWheel() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -170,15 +173,18 @@ function drawWheel() {
   ctx.fill();
 }
 
+// 🔄 Animate spin
 function spinToIndex(index) {
+  console.log("🚀 spinToIndex:", index);
   if (games.length === 0 || index < 0) return;
 
   const segmentAngle = (2 * Math.PI) / games.length;
   const stopAngle = (3 * Math.PI / 2) - (index * segmentAngle) + (segmentAngle / 2);
-  const extraSpins = 5 * 2 * Math.PI;
+  const extraSpins = 4 * 2 * Math.PI; // 4 full spins
   targetAngle = stopAngle + extraSpins;
 
-  spinVelocity = 0.2;
+  angle = 0;
+  spinVelocity = 0.25;
   isSpinning = true;
   requestAnimationFrame(animateSpin);
 }
