@@ -1,6 +1,7 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const cors = require("cors")({ origin: true });
+const cors = require("cors");
+const corsHandler = cors({ origin: true });
 const { fetch } = require("undici");
 const axios = require("axios");
 
@@ -203,42 +204,138 @@ exports.getAvatars = functions.https.onRequest((req, res) => {
   });
 });
 
-exports.saveQuote = functions.https.onRequest(async (req, res) => {
-  const { discordId, discordTag, quote } = req.body;
-  if (!discordId || !quote) {
-    return res.status(400).json({ message: "Missing data" });
-  }
+exports.saveQuote = functions.https.onRequest((req, res) => {
+  corsHandler(req, res, async () => {
+    const { discordId, discordTag, quote } = req.body;
 
-  try {
-    await admin.firestore().collection("quotes").add({
-      discordId,
-      discordTag,
-      quote,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    });
+    if (!discordId || !quote) {
+      return res.status(400).json({ message: "Missing data" });
+    }
 
-    res.status(200).json({ message: "Quote saved successfully!" });
-  } catch (err) {
-    console.error("Error saving quote:", err);
-    res.status(500).json({ message: "Server error while saving quote" });
-  }
+    try {
+      const docRef = await db.collection("quotes").add({
+        discordId,
+        discordTag,
+        quote,
+        likes: 0,
+        likedBy: [],
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      return res.status(200).json({
+        message: "Quote saved successfully!",
+        id: docRef.id
+      });
+    } catch (err) {
+      console.error("Error saving quote:", err);
+      return res.status(500).json({ message: "Server error while saving quote" });
+    }
+  });
 });
 
+exports.updateQuote = functions.https.onRequest((req, res) => {
+  corsHandler(req, res, async () => {
+    const { id, quote } = req.body;
+    if (!id || !quote) {
+      return res.status(400).json({ success: false, message: "Missing data" });
+    }
 
-exports.getQuotes = functions.https.onRequest(async (req, res) => {
-  try {
-    const snapshot = await admin.firestore()
-      .collection("quotes")
-      .orderBy("createdAt", "desc")
-      .get();
+    try {
+      const ref = db.collection("quotes").doc(id);
+      const doc = await ref.get();
 
-    const quotes = snapshot.docs.map(doc => doc.data());
-    res.status(200).json(quotes);
-  } catch (err) {
-    console.error("Error getting quotes:", err);
-    res.status(500).json({ message: "Server error while fetching quotes" });
-  }
+      if (!doc.exists) {
+        return res.status(404).json({ success: false, message: "Quote not found" });
+      }
+
+      await ref.update({ quote });
+      res.status(200).json({ success: true });
+    } catch (err) {
+      console.error("Error updating quote:", err);
+      res.status(500).json({ success: false, message: "Server error" });
+    }
+  });
 });
+
+exports.deleteQuote = functions.https.onRequest((req, res) => {
+  corsHandler(req, res, async () => {
+    const { id } = req.body;
+    if (!id) {
+      return res.status(400).json({ success: false, message: "Missing ID" });
+    }
+
+    try {
+      const ref = db.collection("quotes").doc(id);
+      const doc = await ref.get();
+
+      if (!doc.exists) {
+        return res.status(404).json({ success: false, message: "Quote not found" });
+      }
+
+      await ref.delete();
+      res.status(200).json({ success: true });
+    } catch (err) {
+      console.error("Error deleting quote:", err);
+      res.status(500).json({ success: false, message: "Server error" });
+    }
+  });
+});
+
+exports.likeQuote = functions.https.onRequest((req, res) => {
+  corsHandler(req, res, async () => {
+    const { id, userId } = req.body;
+    if (!id || !userId) {
+      return res.status(400).json({ success: false, message: "Missing fields" });
+    }
+
+    try {
+      const ref = db.collection("quotes").doc(id);
+      const doc = await ref.get();
+
+      if (!doc.exists) {
+        return res.status(404).json({ success: false, message: "Quote not found" });
+      }
+
+      const data = doc.data();
+      const likedBy = data.likedBy || [];
+
+      if (likedBy.includes(userId)) {
+        return res.status(200).json({ success: true, message: "Already liked", newLikeCount: data.likes });
+      }
+
+      likedBy.push(userId);
+      const newLikeCount = (data.likes || 0) + 1;
+
+      await ref.update({ likes: newLikeCount, likedBy });
+
+      res.status(200).json({ success: true, newLikeCount });
+    } catch (err) {
+      console.error("Error liking quote:", err);
+      res.status(500).json({ success: false, message: "Server error" });
+    }
+  });
+});
+
+exports.getQuotes = functions.https.onRequest((req, res) => {
+  corsHandler(req, res, async () => {
+    try {
+      const snapshot = await db.collection("quotes").orderBy("createdAt", "desc").get();
+      const quotes = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate?.().toISOString() || null
+        };
+      });
+      res.status(200).json(quotes);
+    } catch (err) {
+      console.error("Error getting quotes:", err);
+      res.status(500).json({ message: "Server error while fetching quotes" });
+    }
+  });
+});
+
 
 
 // Discord OAuth2 exchange
