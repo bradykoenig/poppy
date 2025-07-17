@@ -178,16 +178,21 @@ function spinToIndex(index) {
   console.log("🚀 spinToIndex:", index);
   if (games.length === 0 || index < 0) return;
 
+  // Clear any existing animation frame
+  cancelAnimationFrame(animateSpin);
+
   const segmentAngle = (2 * Math.PI) / games.length;
   const stopAngle = (3 * Math.PI / 2) - (index * segmentAngle) + (segmentAngle / 2);
-  const extraSpins = 4 * 2 * Math.PI; // 4 full spins
+  const extraSpins = 5 * 2 * Math.PI;
   targetAngle = stopAngle + extraSpins;
 
   angle = 0;
-  spinVelocity = 0.25;
+  spinVelocity = 0.35; // slightly faster to kick off
   isSpinning = true;
+
   requestAnimationFrame(animateSpin);
 }
+
 
 function animateSpin() {
   if (!isSpinning) return;
