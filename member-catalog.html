@@ -88,19 +88,19 @@
       background: #000;
     }
 
-    .avatar-card .platform {
+    .platform {
       font-weight: 600;
       font-size: 14px;
       color: #8a64ff;
     }
 
-    .avatar-card .username {
+    .username {
       font-size: 14px;
       margin-top: 4px;
       color: #ccc;
     }
 
-    .avatar-card .submitted {
+    .submitted {
       font-size: 12px;
       color: #777;
       margin-top: 6px;
@@ -168,58 +168,57 @@
     }
 
     async function getRobloxId(username) {
-        try {
-            const res = await fetch(`https://us-central1-poppy-d5573.cloudfunctions.net/getRobloxId?username=${encodeURIComponent(username)}`);
-            const data = await res.json();
-            return data.id || null;
-        } catch (e) {
-            console.warn("Failed to fetch Roblox ID from Firebase:", e);
-            return null;
-        }
+      try {
+        const res = await fetch(`https://us-central1-poppy-d5573.cloudfunctions.net/getRobloxId?username=${username}`);
+        const data = await res.json();
+        return data.id || null;
+      } catch (e) {
+        console.warn("Failed to fetch Roblox ID:", e);
+        return null;
+      }
     }
-
 
     async function loadAvatars() {
-  try {
-    const res = await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/getAvatars");
-    const data = await res.json();
-    const container = document.getElementById("avatar-list");
-    container.innerHTML = "";
+      try {
+        const res = await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/getAvatars");
+        const data = await res.json();
+        const container = document.getElementById("avatar-list");
+        container.innerHTML = "";
 
-    for (const entry of data) {
-      // Roblox Card
-      if (entry.robloxUsername) {
-        const robloxId = await getRobloxId(entry.robloxUsername);
-        if (robloxId) {
-          const robloxCard = `
-            <div class="avatar-card">
-              <img src="https://thumbnails.roblox.com/v1/users/avatar?userIds=${robloxId}&size=720x720&format=Png&isCircular=false" alt="Roblox Avatar" />
-              <div class="platform">Roblox</div>
-              <div class="username">${entry.robloxUsername}</div>
-              <div class="submitted">Submitted by: ${entry.discordTag}</div>
-            </div>
-          `;
-          container.innerHTML += robloxCard;
+        for (const entry of data) {
+          // Roblox Card
+          if (entry.robloxUsername) {
+            const robloxId = await getRobloxId(entry.robloxUsername);
+            if (robloxId) {
+              const robloxCard = `
+                <div class="avatar-card">
+                  <img src="https://thumbnails.roblox.com/v1/users/avatar?userIds=${robloxId}&size=720x720&format=Png&isCircular=false" alt="Roblox Avatar" />
+                  <div class="platform">Roblox</div>
+                  <div class="username">${entry.robloxUsername}</div>
+                  <div class="submitted">Submitted by: ${entry.discordTag}</div>
+                </div>
+              `;
+              container.innerHTML += robloxCard;
+            }
+          }
+
+          // Minecraft Card
+          if (entry.minecraftUsername) {
+            const minecraftCard = `
+              <div class="avatar-card">
+                <img src="https://mc-heads.net/body/${entry.minecraftUsername}" alt="Minecraft Avatar" />
+                <div class="platform">Minecraft</div>
+                <div class="username">${entry.minecraftUsername}</div>
+                <div class="submitted">Submitted by: ${entry.discordTag}</div>
+              </div>
+            `;
+            container.innerHTML += minecraftCard;
+          }
         }
-      }
-
-      // Minecraft Card (unchanged)
-      if (entry.minecraftUsername) {
-        const minecraftCard = `
-          <div class="avatar-card">
-            <img src="https://mc-heads.net/body/${entry.minecraftUsername}" alt="Minecraft Avatar" />
-            <div class="platform">Minecraft</div>
-            <div class="username">${entry.minecraftUsername}</div>
-            <div class="submitted">Submitted by: ${entry.discordTag}</div>
-          </div>
-        `;
-        container.innerHTML += minecraftCard;
+      } catch (err) {
+        console.error("Error loading avatars:", err);
       }
     }
-  } catch (err) {
-    console.error("Error loading avatars:", err);
-  }
-}
 
     loadAvatars();
   </script>

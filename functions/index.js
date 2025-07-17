@@ -120,6 +120,7 @@ exports.getRobloxId = functions.https.onRequest(async (req, res) => {
     const user = data.data && data.data.length > 0 ? data.data[0] : null;
 
     if (user) {
+      res.set("Access-Control-Allow-Origin", "*");
       res.json({ id: user.id });
     } else {
       res.status(404).json({ error: "User not found" });
