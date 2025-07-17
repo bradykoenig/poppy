@@ -18,6 +18,13 @@
     <div id="user-info" class="user-info"></div>
   </div>
 
+    <script>
+    const user = JSON.parse(localStorage.getItem("discordUser"));
+    if (user && user.id) {
+      window.location.href = "home.html";
+    }
+  </script>
   <script src="script.js"></script>
+
 </body>
 </html>
