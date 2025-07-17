@@ -80,21 +80,30 @@
     }
 
     .avatar-card img {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      object-fit: cover;
+      width: 140px;
+      height: 140px;
+      object-fit: contain;
+      border-radius: 8px;
       margin-bottom: 10px;
+      background: #000;
     }
 
-    .avatar-card .discord-tag {
+    .avatar-card .platform {
       font-weight: 600;
-      margin-bottom: 5px;
+      font-size: 14px;
+      color: #8a64ff;
     }
 
     .avatar-card .username {
       font-size: 14px;
+      margin-top: 4px;
       color: #ccc;
+    }
+
+    .avatar-card .submitted {
+      font-size: 12px;
+      color: #777;
+      margin-top: 6px;
     }
   </style>
 </head>
@@ -160,26 +169,11 @@
 
     async function getRobloxId(username) {
       try {
-        const res = await fetch(`https://users.roblox.com/v1/usernames/users`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ usernames: [username] })
-        });
+        const res = await fetch(`https://corsproxy.io/?https://api.roblox.com/users/get-by-username?username=${username}`);
         const data = await res.json();
-        return data.data?.[0]?.id || null;
+        return data.Id || null;
       } catch (e) {
         console.warn("Failed to fetch Roblox ID:", e);
-        return null;
-      }
-    }
-
-    async function getRobloxAvatarURL(userId) {
-      try {
-        const res = await fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=100x100&format=Png&isCircular=true`);
-        const data = await res.json();
-        return data.data?.[0]?.imageUrl || null;
-      } catch (e) {
-        console.warn("Failed to fetch Roblox avatar URL:", e);
         return null;
       }
     }
@@ -192,28 +186,34 @@
         container.innerHTML = "";
 
         for (const entry of data) {
-          let robloxImg = "";
+          // Roblox Card
           if (entry.robloxUsername) {
             const robloxId = await getRobloxId(entry.robloxUsername);
             if (robloxId) {
-              robloxImg = await getRobloxAvatarURL(robloxId);
+              const robloxCard = `
+                <div class="avatar-card">
+                  <img src="https://thumbnails.roblox.com/v1/users/avatar?userIds=${robloxId}&size=720x720&format=Png&isCircular=false" alt="Roblox Avatar" />
+                  <div class="platform">Roblox</div>
+                  <div class="username">${entry.robloxUsername}</div>
+                  <div class="submitted">Submitted by: ${entry.discordTag}</div>
+                </div>
+              `;
+              container.innerHTML += robloxCard;
             }
           }
 
-          const minecraftImg = entry.minecraftUsername
-            ? `https://minotar.net/avatar/${entry.minecraftUsername}/100`
-            : "";
-
-          const avatarHTML = `
-            <div class="avatar-card">
-              <div class="discord-tag">${entry.discordTag}</div>
-              ${robloxImg ? `<img src="${robloxImg}" alt="Roblox Avatar" />` : ""}
-              ${minecraftImg ? `<img src="${minecraftImg}" alt="Minecraft Avatar" />` : ""}
-              ${entry.robloxUsername ? `<div class="username">Roblox: ${entry.robloxUsername}</div>` : ""}
-              ${entry.minecraftUsername ? `<div class="username">Minecraft: ${entry.minecraftUsername}</div>` : ""}
-            </div>
-          `;
-          container.innerHTML += avatarHTML;
+          // Minecraft Card
+          if (entry.minecraftUsername) {
+            const minecraftCard = `
+              <div class="avatar-card">
+                <img src="https://mc-heads.net/body/${entry.minecraftUsername}" alt="Minecraft Avatar" />
+                <div class="platform">Minecraft</div>
+                <div class="username">${entry.minecraftUsername}</div>
+                <div class="submitted">Submitted by: ${entry.discordTag}</div>
+              </div>
+            `;
+            container.innerHTML += minecraftCard;
+          }
         }
       } catch (err) {
         console.error("Error loading avatars:", err);
