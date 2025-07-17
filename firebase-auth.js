@@ -19,14 +19,19 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Persist session if token is saved
-const storedToken = localStorage.getItem("firebaseToken");
-if (storedToken) {
-  setPersistence(auth, browserLocalPersistence).then(() =>
-    signInWithCustomToken(auth, storedToken)
-  ).catch(console.error);
+// 🔄 Try to log in with the saved custom token
+const token = localStorage.getItem("firebaseToken");
+if (token) {
+  setPersistence(auth, browserLocalPersistence)
+    .then(() => signInWithCustomToken(auth, token))
+    .catch((err) => {
+      console.error("❌ Failed to sign in with stored Firebase token:", err);
+    });
+} else {
+  console.warn("⚠️ No Firebase token found in localStorage.");
 }
 
+// 🔍 Debug Firebase auth state
 onAuthStateChanged(auth, (user) => {
   if (user) {
     console.log("✅ Firebase signed in:", user.uid);
