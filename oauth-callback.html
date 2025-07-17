@@ -16,14 +16,6 @@
       browserLocalPersistence
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get("code");
-
-    if (!code) {
-      alert("Login failed: No authorization code found.");
-      window.location.href = "/home.html";
-    }
-
     const firebaseConfig = {
       apiKey: "AIzaSyBOCaso0cw72WxrObQTOlcwSXzEVV2HP7U",
       authDomain: "poppy-d5573.firebaseapp.com",
@@ -33,8 +25,16 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+
+    if (!code) {
+      alert("Login failed: No authorization code found.");
+      window.location.href = "/home.html";
+    }
+
     try {
-      // Step 1: Exchange Discord code for access token
+      // Step 1: Exchange code for access token + Discord user
       const tokenRes = await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/exchangeCode", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -47,7 +47,7 @@
         throw new Error("Missing Discord login data");
       }
 
-      // Step 2: Check if user is in server
+      // Step 2: Check if user is in the server
       const inServer = guilds.some(g => g.id === "1391923229249114112");
       if (!inServer) {
         alert("You are not in the Poppy Pooperz Discord server!");
@@ -55,7 +55,7 @@
         return;
       }
 
-      // Step 3: Get Firebase custom token using Discord access token
+      // Step 3: Exchange Discord token for Firebase token
       const loginRes = await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/discordLogin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -70,15 +70,15 @@
       await setPersistence(auth, browserLocalPersistence);
       await signInWithCustomToken(auth, firebaseToken);
 
-      // Step 5: Save both tokens
-      localStorage.setItem("discordUser", JSON.stringify(user));
+      // Step 5: Save session locally
       localStorage.setItem("firebaseToken", firebaseToken);
+      localStorage.setItem("discordUser", JSON.stringify(user));
 
-      // ✅ All done — go to homepage
+      // ✅ Done!
       window.location.href = "/";
     } catch (err) {
       console.error("OAuth callback error:", err);
-      alert("Login failed.");
+      alert("Login failed. See console.");
       window.location.href = "/";
     }
   </script>
