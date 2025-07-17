@@ -34,13 +34,15 @@ async function updatePresence() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         discordId: user.id,
-        discordTag: `${user.username}#${user.discriminator}`
+        discordTag: `${user.username}#${user.discriminator}`,
+        avatar: `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
       })
     });
   } catch (err) {
     console.error("Presence update failed:", err);
   }
 }
+
 
 updatePresence();
 setInterval(updatePresence, 60000); // update every minute

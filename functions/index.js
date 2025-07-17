@@ -346,7 +346,7 @@ exports.updatePresence = functions.https.onRequest(async (req, res) => {
     try {
       const ref = admin.firestore().collection("presence").doc(discordId);
       const doc = await ref.get();
-      const now = admin.firestore.FieldValue.serverTimestamp();
+      const now = new Date(); // use resolved timestamp
 
       const updateData = {
         discordTag,
@@ -364,6 +364,7 @@ exports.updatePresence = functions.https.onRequest(async (req, res) => {
     }
   });
 });
+
 
 exports.getPresence = functions.https.onRequest(async (req, res) => {
   corsHandler(req, res, async () => {
