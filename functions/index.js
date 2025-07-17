@@ -77,45 +77,56 @@ exports.getRobloxAvatar = functions.https.onRequest((req, res) => {
   });
 });
 
-exports.discordLogin = functions.https.onRequest(async (req, res) => {
-  const { accessToken } = req.body;
+exports.discordLogin = functions.https.onRequest((req, res) => {
+  cors(req, res, async () => {
+    try {
+      const { accessToken } = req.body;
 
-  if (!accessToken) {
-    return res.status(400).json({ error: "Missing access token" });
-  }
+      if (!accessToken) {
+        console.error("❌ No access token provided");
+        return res.status(400).json({ error: "Missing access token" });
+      }
 
-  try {
-    // Get Discord user
-    const userRes = await axios.get("https://discord.com/api/users/@me", {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
+      const userRes = await axios.get("https://discord.com/api/users/@me", {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
 
-    const discordUser = userRes.data;
-    const uid = `discord:${discordUser.id}`;
+      const discordUser = userRes.data;
+      const uid = discordUser.id; // plain string
 
-    // Create or update Firebase user
-    await admin.auth().updateUser(uid, {
-      displayName: `${discordUser.username}#${discordUser.discriminator}`,
-      photoURL: `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
-    }).catch(async err => {
-      if (err.code === "auth/user-not-found") {
+      console.log("✅ Discord user:", discordUser);
+
+      // Try to update first
+      try {
         await admin.auth().createUser({
-          uid,
+          uid: discordUser.id,
           displayName: `${discordUser.username}#${discordUser.discriminator}`,
           photoURL: `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
         });
-      } else {
-        throw err;
-      }
-    });
 
-    // Create custom token
-    const token = await admin.auth().createCustomToken(uid);
-    return res.json({ firebaseToken: token, user: discordUser });
-  } catch (err) {
-    console.error("Error generating Firebase token:", err);
-    return res.status(500).json({ error: "Token generation failed" });
-  }
+        console.log("✅ Firebase user updated");
+      } catch (err) {
+        if (err.code === "auth/user-not-found") {
+          await admin.auth().createUser({
+            uid,
+            displayName: `${discordUser.username}#${discordUser.discriminator}`,
+            photoURL: `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
+          });
+          console.log("✅ Firebase user created");
+        } else {
+          console.error("❌ Failed to create/update user:", err);
+          throw err;
+        }
+      }
+
+      const firebaseToken = await admin.auth().createCustomToken(uid);
+      console.log("✅ Firebase token created:", firebaseToken.substring(0, 20) + "...");
+      return res.json({ firebaseToken });
+    } catch (err) {
+      console.error("❌ discordLogin error:", err);
+      return res.status(500).json({ error: "Token generation failed" });
+    }
+  });
 });
 
 

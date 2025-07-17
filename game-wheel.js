@@ -1,9 +1,19 @@
 import {
-  collection, addDoc, onSnapshot, deleteDoc, doc, setDoc
+  getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
-import { db } from "./firebase-auth.js"; // ✅ Import shared instance
+// ✅ Firebase config for Firestore only
+const firebaseConfig = {
+  apiKey: "AIzaSyBOCaso0cw72WxrObQTOlcwSXzEVV2HP7U",
+  authDomain: "poppy-d5573.firebaseapp.com",
+  projectId: "poppy-d5573"
+};
 
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// 🎯 Game logic
 const canvas = document.getElementById("wheel-canvas");
 const ctx = canvas.getContext("2d");
 let games = [];
@@ -12,16 +22,15 @@ let isSpinning = false;
 let angle = 0;
 let spinVelocity = 0;
 let targetAngle = 0;
-
 const spinResultRef = doc(db, "gameWheelMeta", "spinResult");
 let latestSpinResult = null;
 
 function debug(msg) {
-  const debugBox = document.getElementById("debug");
-  if (debugBox) debugBox.textContent = msg;
+  const el = document.getElementById("debug");
+  if (el) el.textContent = msg;
 }
 
-// Live game list sync
+// 🟣 Watch games live
 onSnapshot(collection(db, "gameWheel"), (snapshot) => {
   games = [];
   snapshot.forEach(doc => {
@@ -38,7 +47,7 @@ onSnapshot(collection(db, "gameWheel"), (snapshot) => {
   }
 });
 
-// Listen for spin result
+// 🟡 Watch spin result
 onSnapshot(spinResultRef, (docSnap) => {
   const result = docSnap.data();
   latestSpinResult = result;
@@ -67,7 +76,7 @@ window.submitGame = async function () {
     input.value = "";
   } catch (err) {
     console.error("Error adding game:", err);
-    debug("❌ Failed to add game. Check console.");
+    debug("❌ Failed to add game. Try again.");
   }
 };
 
@@ -81,7 +90,7 @@ window.spinWheel = async function () {
     await setDoc(spinResultRef, selected);
   } catch (err) {
     console.error("Error setting spin result:", err);
-    debug("❌ Failed to spin. Check permissions.");
+    debug("❌ Failed to spin.");
   }
 };
 
@@ -99,7 +108,6 @@ window.keepGame = async function () {
   await setDoc(spinResultRef, {});
 };
 
-// Wheel drawing logic
 function drawWheel() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -145,7 +153,6 @@ function drawWheel() {
   ctx.fill();
 }
 
-// Spin animation
 function spinToIndex(index) {
   if (games.length === 0 || index < 0) return;
 
@@ -168,7 +175,8 @@ function animateSpin() {
   if (angle >= targetAngle) {
     angle = targetAngle % (2 * Math.PI);
     isSpinning = false;
-    document.getElementById("selectedGame").textContent = `🎯 Selected: ${currentGame.game} (by ${currentGame.user})`;
+    document.getElementById("selectedGame").textContent =
+      `🎯 Selected: ${currentGame.game} (by ${currentGame.user})`;
     document.getElementById("postSpinActions").style.display = "flex";
   }
 
