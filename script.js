@@ -29,14 +29,15 @@ async function updatePresence() {
   if (!user) return;
 
   try {
+    console.log("Updating presence for", discordId, discordTag, avatar);
     await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/updatePresence", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        discordId: user.id,
-        discordTag: `${user.username}#${user.discriminator}`,
-        avatar: `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
-      })
+      discordId: user.id,
+      discordTag: `${user.username}#${user.discriminator}`,
+      avatar: `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
+    })
     });
   } catch (err) {
     console.error("Presence update failed:", err);
