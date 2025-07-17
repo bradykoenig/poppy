@@ -25,16 +25,16 @@
     })
     .then(res => res.json())
     .then(data => {
+      console.log("Received from backend:", data); // DEBUG LINE
+
       if (!data.access_token || !data.user || !data.guilds) {
         throw new Error("Missing required data from backend.");
       }
 
       const { access_token, user, guilds } = data;
 
-      // Store user info locally
       localStorage.setItem("discordUser", JSON.stringify(user));
 
-      // Check if user is in the Poppy Pooperz Discord server
       const inPoppyPooperz = Array.isArray(guilds) &&
         guilds.some(g => g.id === "1391923229249114112");
 
@@ -42,7 +42,6 @@
         alert("You are not in the Poppy Pooperz Discord server!");
       }
 
-      // Redirect to home page
       window.location.href = "/";
     })
     .catch(err => {

@@ -40,12 +40,12 @@ exports.exchangeCode = functions.https.onRequest((req, res) => {
         return res.status(401).json({ error: "Token exchange failed", details: tokenData });
       }
 
-      const accessToken = tokenData.access_token;
+      const access_token = tokenData.access_token;
 
       // Fetch user info
       const userRes = await fetch("https://discord.com/api/users/@me", {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${access_token}`,
         },
       });
       const user = await userRes.json();
@@ -53,12 +53,14 @@ exports.exchangeCode = functions.https.onRequest((req, res) => {
       // Fetch guilds
       const guildsRes = await fetch("https://discord.com/api/users/@me/guilds", {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${access_token}`,
         },
       });
       const guilds = await guildsRes.json();
 
-      res.json({ user, guilds });
+      // ✅ Final response with access_token included
+      res.json({ access_token, user, guilds });
+
     } catch (err) {
       console.error("OAuth error:", err);
       res.status(500).json({ error: "Internal server error" });
