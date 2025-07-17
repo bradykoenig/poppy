@@ -7,33 +7,38 @@
 <body style="background: #0f0f0f; color: white; text-align: center; padding-top: 100px;">
   <h2>Logging in...</h2>
   <script>
-    const accessToken = window.location.hash.split('&')[0].split('=')[1];
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
 
-    fetch('https://discord.com/api/users/@me', {
-      headers: {
-        Authorization: `Bearer ${accessToken}`
+    if (!code) {
+      alert("Login failed: No authorization code found.");
+      window.location.href = "/";
+    }
+
+    fetch("https://us-central1-poppy-d5573.cloudfunctions.net/exchangeCode", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (!data.user || !data.guilds) {
+        throw new Error("Invalid response from backend");
       }
-    })
-    .then(res => res.json())
-    .then(user => {
-      localStorage.setItem('discordUser', JSON.stringify(user));
 
-      return fetch('https://discord.com/api/users/@me/guilds', {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
-    })
-    .then(res => res.json())
-    .then(guilds => {
-      const inPoppyPooperz = guilds.some(g => g.id === '1391923229249114112');
+      localStorage.setItem("discordUser", JSON.stringify(data.user));
+
+      const inPoppyPooperz = Array.isArray(data.guilds) &&
+                             data.guilds.some(g => g.id === "1391923229249114112");
+
       if (!inPoppyPooperz) {
         alert("You are not in the Poppy Pooperz Discord server!");
-        window.location.href = "/";
-      } else {
-        window.location.href = "/"; // back to home page
       }
+
+      window.location.href = "/";
     })
     .catch(err => {
-      console.error(err);
+      console.error("OAuth callback error:", err);
       alert("Login failed");
       window.location.href = "/";
     });
