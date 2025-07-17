@@ -28,22 +28,27 @@ async function updatePresence() {
   const user = JSON.parse(localStorage.getItem("discordUser"));
   if (!user) return;
 
+  const avatarUrl = user.avatar
+    ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
+    : `https://cdn.discordapp.com/embed/avatars/0.png`;
+
   try {
-    console.log("Updating presence for", discordId, discordTag, avatar);
+    console.log("Presence update response:", await response.json());
     await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/updatePresence", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-      discordId: user.id,
-      discordTag: `${user.username}#${user.discriminator}`,
-      avatar: `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
-    })
+        discordId: user.id,
+        discordTag: `${user.username}#${user.discriminator}`,
+        avatar: avatarUrl
+      })
     });
+
+    console.log("Presence updated.");
   } catch (err) {
     console.error("Presence update failed:", err);
   }
 }
-
 
 updatePresence();
 setInterval(updatePresence, 60000); // update every minute

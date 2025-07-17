@@ -346,14 +346,15 @@ exports.updatePresence = functions.https.onRequest(async (req, res) => {
     try {
       const ref = admin.firestore().collection("presence").doc(discordId);
       const doc = await ref.get();
-      const now = new Date(); // use resolved timestamp
+      const now = admin.firestore.Timestamp.now();
 
       const updateData = {
         discordTag,
         avatar,
-        lastSeen: now,
+        lastSeen: admin.firestore.Timestamp.now(),
         visits: doc.exists ? (doc.data().visits || 1) + 1 : 1
       };
+
 
       await ref.set(updateData, { merge: true });
 
