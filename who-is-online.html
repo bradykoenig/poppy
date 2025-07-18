@@ -124,6 +124,17 @@
       font-size: 13px;
       color: #999;
     }
+
+    .dot-online {
+        display: inline-block;
+        margin-left: 6px;
+        width: 10px;
+        height: 10px;
+        background-color: #00ff99;
+        border-radius: 50%;
+        box-shadow: 0 0 4px #00ff99;
+    }
+
   </style>
 </head>
 <body>
@@ -156,67 +167,75 @@
 
   <!-- Firebase -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import {
-      getFirestore,
-      collection,
-      getDocs
-    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    onSnapshot
+  } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBOCaso0cw72WxrObQTOlcwSXzEVV2HP7U",
-      authDomain: "poppy-d5573.firebaseapp.com",
-      projectId: "poppy-d5573"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyBOCaso0cw72WxrObQTOlcwSXzEVV2HP7U",
+    authDomain: "poppy-d5573.firebaseapp.com",
+    projectId: "poppy-d5573"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-    function timeAgo(timestamp) {
-      const now = Date.now();
-      const diffMs = now - new Date(timestamp).getTime();
-      const diffMin = Math.floor(diffMs / 60000);
-      if (diffMin < 1) return "just now";
-      if (diffMin === 1) return "1 minute ago";
-      return `${diffMin} minutes ago`;
-    }
+  function timeAgo(timestamp) {
+    const now = Date.now();
+    const diffMs = now - new Date(timestamp).getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return "just now";
+    if (diffMin === 1) return "1 minute ago";
+    return `${diffMin} minutes ago`;
+  }
 
-    async function loadPresence() {
-      const onlineEl = document.getElementById("onlineUsers");
-      const recentEl = document.getElementById("recentVisitors");
+  function renderPresence(snapshot) {
+    const onlineEl = document.getElementById("onlineUsers");
+    const recentEl = document.getElementById("recentVisitors");
+    onlineEl.innerHTML = "";
+    recentEl.innerHTML = "";
 
-      onlineEl.innerHTML = "";
-      recentEl.innerHTML = "";
+    const now = Date.now();
 
-      const now = Date.now();
-      const snap = await getDocs(collection(db, "presence"));
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const avatar = data.avatar || "https://cdn.discordapp.com/embed/avatars/0.png";
+      const tag = data.discordTag || "Unknown#0000";
+      let lastSeen;
 
-      snap.forEach(doc => {
-        const data = doc.data();
-        const lastSeen = data.lastSeen?.toDate?.();
-        if (!lastSeen) return;
+      try {
+        lastSeen = data.lastSeen.toDate();
+      } catch {
+        return; // skip if invalid timestamp
+      }
 
-        const card = document.createElement("div");
-        card.className = "user-card";
-        card.innerHTML = `
-          <img src="${data.avatar}" alt="avatar">
-          <div class="user-info">
-            <div class="tag">${data.discordTag}</div>
-            <div class="seen">Last seen ${timeAgo(lastSeen)}</div>
-            <div class="visits">Visits: ${data.visits || 1}</div>
-          </div>
-        `;
+      const isOnline = now - lastSeen.getTime() < 5 * 60 * 1000;
 
-        if (now - lastSeen.getTime() < 5 * 60 * 1000) {
-          onlineEl.appendChild(card);
-        } else {
-          recentEl.appendChild(card);
-        }
-      });
-    }
+      const card = document.createElement("div");
+      card.className = "user-card";
+      card.innerHTML = `
+        <img src="${avatar}" alt="avatar">
+        <div class="user-info">
+          <div class="tag">${tag} ${isOnline ? '<span class="dot-online"></span>' : ''}</div>
+          <div class="seen">Last seen ${timeAgo(lastSeen)}</div>
+          <div class="visits">Visits: ${data.visits || 1}</div>
+        </div>
+      `;
 
-    loadPresence();
-  </script>
+      if (isOnline) {
+        onlineEl.appendChild(card);
+      } else {
+        recentEl.appendChild(card);
+      }
+    });
+  }
+
+  onSnapshot(collection(db, "presence"), renderPresence);
+</script>
+
 
 </body>
 </html>
