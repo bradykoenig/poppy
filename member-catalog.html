@@ -90,24 +90,22 @@
     }
   }
 
+  function getCardHtml(platform, imageUrl, username, discordTag) {
+    return `
+      <div class="avatar-card">
+        <img src="${imageUrl}" alt="${platform} Avatar" />
+        <div class="platform">${platform}</div>
+        <div class="username">${username}</div>
+        <div class="submitted">Submitted by: ${discordTag}</div>
+      </div>
+    `;
+  }
+
   async function renderAvatars() {
     const container = document.getElementById("avatar-list");
     const platform = document.getElementById("platformFilter").value;
     const submitter = document.getElementById("submitterFilter").value;
     container.innerHTML = "";
-
-    const seen = new Set();
-    const submitterSelect = document.getElementById("submitterFilter");
-    submitterSelect.innerHTML = `<option value="all">All Submitters</option>`;
-    avatars.forEach(a => {
-      if (!seen.has(a.discordTag)) {
-        const opt = document.createElement("option");
-        opt.value = a.discordTag;
-        opt.textContent = a.discordTag;
-        submitterSelect.appendChild(opt);
-        seen.add(a.discordTag);
-      }
-    });
 
     for (const entry of avatars) {
       if (submitter !== "all" && entry.discordTag !== submitter) continue;
@@ -134,20 +132,25 @@
     }
   }
 
-  function getCardHtml(platform, imageUrl, username, discordTag) {
-    return `
-      <div class="avatar-card">
-        <img src="${imageUrl}" alt="${platform} Avatar" />
-        <div class="platform">${platform}</div>
-        <div class="username">${username}</div>
-        <div class="submitted">Submitted by: ${discordTag}</div>
-      </div>
-    `;
-  }
-
+  // Firestore listener for real-time updates
   const avatarQuery = query(collection(db, "avatars"), orderBy("timestamp", "desc"));
   onSnapshot(avatarQuery, snapshot => {
     avatars = snapshot.docs.map(doc => doc.data());
+
+    // Update submitter filter dropdown
+    const submitterSelect = document.getElementById("submitterFilter");
+    const seen = new Set();
+    submitterSelect.innerHTML = `<option value="all">All Submitters</option>`;
+    avatars.forEach(a => {
+      if (!seen.has(a.discordTag)) {
+        const opt = document.createElement("option");
+        opt.value = a.discordTag;
+        opt.textContent = a.discordTag;
+        submitterSelect.appendChild(opt);
+        seen.add(a.discordTag);
+      }
+    });
+
     renderAvatars();
   });
 </script>
