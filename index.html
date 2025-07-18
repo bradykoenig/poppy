@@ -6,23 +6,124 @@
   <title>Poppy Pooperz</title>
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet"/>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Outfit', sans-serif;
+      background: linear-gradient(-45deg, #0f0f0f, #181818, #1a1a1a, #101010);
+      background-size: 400% 400%;
+      animation: slowGradient 40s ease infinite;
+      color: white;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    @keyframes slowGradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .container {
+      position: absolute;
+      top: 26%;
+      left: 50%;
+      transform: translate(-50%, -22%);
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 36px;
+      background: linear-gradient(to right, #a970ff, #7cf4f4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 800;
+      margin-bottom: 30px;
+    }
+
+    .login-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .discord-login-btn,
+    .discord-join-btn {
+      width: 260px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 12px 24px;
+      font-size: 15px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      text-align: center;
+    }
+
+    .discord-login-btn {
+      background-color: #5865f2;
+      color: white;
+      border: none;
+    }
+
+    .discord-login-btn:hover {
+      background-color: #4752c4;
+      transform: scale(1.05);
+      box-shadow: 0 0 12px rgba(88, 101, 242, 0.6);
+    }
+
+    .discord-join-btn {
+      background-color: #3aa6ff;
+      color: white;
+      border: none;
+    }
+
+    .discord-join-btn:hover {
+      background-color: #2b96e0;
+      transform: scale(1.05);
+      box-shadow: 0 0 12px rgba(58, 166, 255, 0.5);
+    }
+
+    .discord-login-btn img,
+    .discord-join-btn img {
+      height: 26px;
+      width: 26px;
+      border-radius: 50%;
+    }
+
+    a.button-link {
+      text-decoration: none;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
     <h1>Welcome to Poppy Pooperz</h1>
+
     <div class="login-container">
       <button class="discord-login-btn" onclick="loginWithDiscord()">
-        <img src="assets/discord-icon-white.svg" alt="Discord" class="discord-icon" />
+        <img src="assets/discord-icon-white.svg" alt="Discord" />
         <span>Sign in with Discord</span>
       </button>
+
+      <a href="https://discord.gg/9ZN3zBfwuE" target="_blank" class="button-link">
+        <button class="discord-join-btn">
+          <img src="assets/logo.png" alt="Server Logo" />
+          Join the Discord Server
+        </button>
+      </a>
     </div>
+
     <div id="user-info" class="user-info"></div>
   </div>
 
-  <!-- ✅ Normal script for login function -->
   <script src="script.js"></script>
-
-  <!-- ✅ Firebase logic must be a module -->
   <script type="module" src="presence.js"></script>
 </body>
 </html>

@@ -6,161 +6,168 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet"/>
- <style>
-  html, body {
-    margin: 0;
-    padding: 0;
-    font-family: 'Outfit', sans-serif;
-    background: linear-gradient(to bottom right, #0f0f0f, #1a1a1a);
-    color: white;
-    height: 100vh;
-    overflow: hidden;
-  }
-
-  .main-layout {
-    display: flex;
-    height: calc(100vh - 60px); /* Leave space for navbar */
-  }
-
-  .container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 10px;
-    overflow: hidden;
-  }
-
-  h1 {
-    font-size: 28px;
-    margin: 0 0 10px;
-    background: linear-gradient(to right, #8a64ff, #7cf4f4);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  .input-block {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 10px;
-  }
-
-  #gameInput {
-    width: 240px;
-    padding: 8px 12px;
-    font-size: 14px;
-    background: #1e1e1e;
-    border: 1px solid #888;
-    color: white;
-    border-radius: 6px;
-    outline: none;
-  }
-
-  .submit-btn {
-    padding: 8px 16px;
-    font-size: 14px;
-    font-weight: 600;
-    background-color: #9c6bff;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: 0.2s ease;
-  }
-
-  .submit-btn:hover {
-    background-color: #b084ff;
-  }
-
-  #wheel-canvas {
-    width: 280px;
-    height: 280px;
-    margin: 10px 0;
-    box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
-  }
-
-  .container button {
-    font-size: 14px;
-    padding: 8px 16px;
-    background: #9c6bff;
-    border: none;
-    border-radius: 6px;
-    color: white;
-    cursor: pointer;
-    transition: 0.2s ease;
-  }
-
-  .container button:hover {
-    background: #b084ff;
-  }
-
-  .sidebar {
-    width: 240px;
-    background: #121212;
-    padding: 10px;
-    border-left: 1px solid #333;
-    overflow-y: auto;
-  }
-
-  .sidebar h2 {
-    font-size: 16px;
-    margin: 0 0 10px;
-    text-align: center;
-  }
-
-  .game-item {
-    background: #1e1e1e;
-    padding: 6px;
-    border-radius: 6px;
-    margin-bottom: 6px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .game-item span {
-    font-size: 14px;
-    word-break: break-word;
-    max-width: 150px;
-  }
-
-  .delete-btn {
-    background: #ff4444;
-    border: none;
-    padding: 4px 6px;
-    border-radius: 4px;
-    font-size: 12px;
-    color: white;
-    cursor: pointer;
-  }
-
-  .delete-btn:hover {
-    background: #ff2222;
-  }
-
-  @media (max-width: 768px) {
-    .main-layout {
-      flex-direction: column;
-      height: auto;
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Outfit', sans-serif;
+      background: linear-gradient(270deg, #0f0f0f, #1a1a1a, #0f0f0f);
+      background-size: 600% 600%;
+      animation: animatedBG 16s ease infinite;
+      color: white;
+      height: 100vh;
+      overflow: hidden;
     }
 
-    .sidebar {
-      width: 100%;
-      height: 140px;
-      border-left: none;
-      border-top: 1px solid #333;
+    @keyframes animatedBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .main-layout {
+      display: flex;
+      height: calc(100vh - 60px);
+    }
+
+    .container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+      overflow: hidden;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin: 0 0 10px;
+      background: linear-gradient(to right, #8a64ff, #7cf4f4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .input-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    #gameInput {
+      width: 240px;
+      padding: 8px 12px;
+      font-size: 14px;
+      background: #1e1e1e;
+      border: 1px solid #888;
+      color: white;
+      border-radius: 6px;
+      outline: none;
+    }
+
+    .submit-btn {
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      background-color: #9c6bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .submit-btn:hover {
+      background-color: #b084ff;
     }
 
     #wheel-canvas {
-      width: 240px;
-      height: 240px;
+      width: 280px;
+      height: 280px;
+      margin: 10px 0;
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
     }
-  }
-</style>
 
+    .container button {
+      font-size: 14px;
+      padding: 8px 16px;
+      background: #9c6bff;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .container button:hover {
+      background: #b084ff;
+    }
+
+    .sidebar {
+      width: 240px;
+      background: #121212;
+      padding: 10px;
+      border-left: 1px solid #333;
+      overflow-y: auto;
+    }
+
+    .sidebar h2 {
+      font-size: 16px;
+      margin: 0 0 10px;
+      text-align: center;
+    }
+
+    .game-item {
+      background: #1e1e1e;
+      padding: 6px;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .game-item span {
+      font-size: 14px;
+      word-break: break-word;
+      max-width: 150px;
+    }
+
+    .delete-btn {
+      background: #ff4444;
+      border: none;
+      padding: 4px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+      color: white;
+      cursor: pointer;
+    }
+
+    .delete-btn:hover {
+      background: #ff2222;
+    }
+
+    @media (max-width: 768px) {
+      .main-layout {
+        flex-direction: column;
+        height: auto;
+      }
+
+      .sidebar {
+        width: 100%;
+        height: 140px;
+        border-left: none;
+        border-top: 1px solid #333;
+      }
+
+      #wheel-canvas {
+        width: 240px;
+        height: 240px;
+      }
+    }
+  </style>
 </head>
 <body>
 
@@ -189,21 +196,18 @@
   <script type="module" src="game-wheel.js"></script>
 
   <script>
-  fetch("navbar.html")
-    .then(res => res.text())
-    .then(data => {
-      document.getElementById("navbar-container").innerHTML = data;
-
-      // Optionally mark the current nav link active
-      const currentPage = location.pathname.split("/").pop();
-      document.querySelectorAll("nav a").forEach(link => {
-        if (link.getAttribute("href") === currentPage) {
-          link.classList.add("active");
-        }
+    fetch("navbar.html")
+      .then(res => res.text())
+      .then(data => {
+        document.getElementById("navbar-container").innerHTML = data;
+        const currentPage = location.pathname.split("/").pop();
+        document.querySelectorAll("nav a").forEach(link => {
+          if (link.getAttribute("href") === currentPage) {
+            link.classList.add("active");
+          }
+        });
       });
-    });
-</script>
-
+  </script>
 
 </body>
 </html>

@@ -8,11 +8,21 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet"/>
 
   <style>
-    body {
+    html, body {
       margin: 0;
-      background: #0e0e0e;
-      color: white;
+      padding: 0;
       font-family: 'Outfit', sans-serif;
+      background: linear-gradient(270deg, #0f0f0f, #1a1a1a, #0f0f0f);
+      background-size: 600% 600%;
+      animation: animatedBG 16s ease infinite;
+      color: white;
+      min-height: 100vh;
+    }
+
+    @keyframes animatedBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
 
     header {
@@ -248,7 +258,6 @@
   </style>
 </head>
 <body>
-
   <header>
     <div class="logo">
       <img src="assets/logo.png" alt="Poppy Pooperz Logo" />

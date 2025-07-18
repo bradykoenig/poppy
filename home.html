@@ -6,6 +6,100 @@
   <title>Poppy Pooperz - Home</title>
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet"/>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Outfit', sans-serif;
+      color: white;
+      background: linear-gradient(270deg, #0f0f0f, #1a1a1a, #0f0f0f);
+      background-size: 600% 600%;
+      animation: slowGradient 20s ease infinite;
+      min-height: 100vh;
+    }
+
+    @keyframes slowGradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #161616;
+      padding: 20px 40px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+      flex-wrap: wrap;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      font-size: 24px;
+      font-weight: 800;
+      color: white;
+    }
+
+    .logo img {
+      height: 40px;
+      margin-right: 10px;
+      border-radius: 50%;
+    }
+
+    nav a {
+      color: #aaa;
+      text-decoration: none;
+      margin-left: 20px;
+      font-weight: 500;
+      transition: 0.2s ease;
+    }
+
+    nav a:hover {
+      color: white;
+    }
+
+    nav a.active {
+      color: white;
+      font-weight: 600;
+      border-bottom: 2px solid #8a64ff;
+    }
+
+    main.main {
+      text-align: center;
+      padding: 80px 20px;
+    }
+
+    .gradient-title {
+      font-size: 40px;
+      font-weight: 800;
+      background: linear-gradient(to right, #a970ff, #7cf4f4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .username {
+      margin: 20px 0;
+      font-size: 18px;
+      color: #ddd;
+    }
+
+    .signout-btn {
+      background-color: #9b5cff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .signout-btn:hover {
+      background-color: #b184ff;
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -24,10 +118,6 @@
 
   <main class="main">
     <h1 class="gradient-title">Welcome to Poppy Pooperz</h1>
-    <p class="tagline">
-      The best Discord server around—no debate—and you will be exiled if you think otherwise.
-    </p>
-
     <div class="username" id="username">Checking user...</div>
     <button class="signout-btn" onclick="signOut()">Sign Out</button>
   </main>
@@ -49,21 +139,17 @@
   </script>
 
   <script>
-  fetch("navbar.html")
-    .then(res => res.text())
-    .then(data => {
-      document.getElementById("navbar-container").innerHTML = data;
-
-      // Optionally mark the current nav link active
-      const currentPage = location.pathname.split("/").pop();
-      document.querySelectorAll("nav a").forEach(link => {
-        if (link.getAttribute("href") === currentPage) {
-          link.classList.add("active");
-        }
+    fetch("navbar.html")
+      .then(res => res.text())
+      .then(data => {
+        document.getElementById("navbar-container").innerHTML = data;
+        const currentPage = location.pathname.split("/").pop();
+        document.querySelectorAll("nav a").forEach(link => {
+          if (link.getAttribute("href") === currentPage) {
+            link.classList.add("active");
+          }
+        });
       });
-    });
-</script>
-
-  
+  </script>
 </body>
 </html>
