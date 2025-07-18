@@ -17,85 +17,25 @@
       min-height: 100vh;
     }
 
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: #161616;
-      padding: 20px 40px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
-      flex-wrap: wrap;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      font-size: 24px;
-      font-weight: 800;
-      color: #ffffff;
-    }
-
-    .logo img {
-      height: 40px;
-      margin-right: 10px;
-      border-radius: 50%;
-    }
-
-    nav {
-      display: flex;
-      flex-wrap: wrap;
-      margin-top: 10px;
-    }
-
-    nav a {
-      color: #aaa;
-      text-decoration: none;
-      margin-left: 20px;
-      font-weight: 500;
-      transition: 0.2s ease;
-    }
-
-    nav a:hover {
-      color: #fff;
-    }
-
-    nav a.active {
-      color: #ffffff;
-      font-weight: 600;
-      border-bottom: 2px solid #8a64ff;
-    }
-
-    .main-layout {
+    .upload-section {
       display: flex;
       flex-direction: column;
-      flex: 1;
+      gap: 12px;
+      margin-bottom: 30px;
+      padding: 0 20px;
       align-items: center;
-      padding: 40px 20px;
+      text-align: center;
     }
 
-    h1 {
+    .upload-section h1 {
       font-size: 34px;
       font-weight: 800;
-      margin: 30px 40px 25px;
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
       background: linear-gradient(to right, #8a64ff, #7cf4f4);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       color: transparent;
       line-height: 1.2;
-    }
-
-
-    .upload-section {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 30px;
+      margin: 30px 0 10px;
     }
 
     input[type="file"] {
@@ -124,27 +64,13 @@
       background-color: #b184ff;
     }
 
-    button {
-      background-color: #8a64ff;
-      color: white;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: background 0.2s ease;
-    }
-
-    button:hover {
-      background-color: #a187ff;
-    }
-
     .filter-bar {
       display: flex;
       justify-content: center;
       gap: 12px;
       margin-bottom: 25px;
       flex-wrap: wrap;
+      padding: 0 20px;
     }
 
     select {
@@ -161,6 +87,7 @@
       flex-wrap: wrap;
       gap: 20px;
       justify-content: center;
+      padding: 0 20px 40px;
     }
 
     .media-card {
@@ -189,7 +116,7 @@
 
     .actions {
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       margin-top: 8px;
     }
 
@@ -206,41 +133,16 @@
       text-decoration: underline;
     }
 
-    @media (max-width: 500px) {
-      h1 {
-        font-size: 1.8em;
-      }
+    @media (max-width: 768px) {
       .upload-section {
-        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+      }
+
+      .filter-bar {
+        justify-content: flex-start;
       }
     }
-
-    /* Modal confirm box */
-    #confirmOverlay {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.7);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-
-    #confirmBox {
-      background: #1f1f1f;
-      padding: 20px;
-      border-radius: 10px;
-      text-align: center;
-      max-width: 300px;
-    }
-
-    #confirmBox button {
-      margin: 10px 8px 0;
-    }
-
-
   </style>
 </head>
 <body>
@@ -270,17 +172,8 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
     import {
-      getFirestore,
-      collection,
-      addDoc,
-      getDocs,
-      deleteDoc,
-      doc,
-      onSnapshot,
-      query,
-      orderBy,
-      serverTimestamp,
-      updateDoc
+      getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot,
+      query, orderBy, serverTimestamp, updateDoc
     } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -291,13 +184,11 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-
     let mediaItems = [];
 
     window.uploadMedia = async function uploadMedia() {
       const file = document.getElementById("fileInput").files[0];
       const user = JSON.parse(localStorage.getItem("discordUser"));
-
       if (!file) return alert("Please select a file to upload.");
       if (!user) return alert("You must be logged in to upload media.");
 
@@ -335,12 +226,6 @@
       }
     }
 
-
-    async function deleteMedia(docId) {
-      if (!confirm("Delete this media?")) return;
-      await deleteDoc(doc(db, "pooperScooper", docId));
-    }
-
     function renderGallery() {
       const type = document.getElementById("typeFilter").value;
       const uploader = document.getElementById("uploaderFilter").value;
@@ -363,7 +248,7 @@
 
       const filtered = mediaItems.filter(item => {
         return (type === "all" || item.data.type === type) &&
-              (uploader === "all" || item.data.uploaderId === uploader);
+               (uploader === "all" || item.data.uploaderId === uploader);
       });
 
       filtered.forEach(item => {
@@ -405,64 +290,31 @@
           await updateDoc(docRef, { likes: updatedLikes });
         };
         actions.appendChild(likeBtn);
-
         card.appendChild(actions);
         container.appendChild(card);
       });
     }
 
-
     const q = query(collection(db, "pooperScooper"), orderBy("createdAt", "desc"));
-    onSnapshot(q, (snapshot) => {
+    onSnapshot(q, snapshot => {
       mediaItems = snapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }));
       renderGallery();
     });
-
-    let pendingDeleteId = null;
-
-    window.showConfirm = function showConfirm(id) {
-      pendingDeleteId = id;
-      document.getElementById("confirmOverlay").style.display = "flex";
-    };
-
-    window.cancelDelete = function cancelDelete() {
-      pendingDeleteId = null;
-      document.getElementById("confirmOverlay").style.display = "none";
-    };
-
-    window.confirmDelete = async function confirmDelete() {
-      if (!pendingDeleteId) return;
-
-      const docId = pendingDeleteId; // ✅ preserve before clearing
-      pendingDeleteId = null;
-
-      document.getElementById("confirmOverlay").style.display = "none";
-
-      try {
-        await deleteDoc(doc(db, "pooperScooper", docId));
-      } catch (err) {
-        console.error("Failed to delete:", err);
-        alert("Failed to delete the media. Check console for details.");
-      }
-    };
-
-
-
   </script>
 
   <script>
-  fetch("navbar.html")
-    .then(res => res.text())
-    .then(data => {
-      document.getElementById("navbar-container").innerHTML = data;
-      const currentPage = location.pathname.split("/").pop();
-      document.querySelectorAll("nav a").forEach(link => {
-        if (link.getAttribute("href") === currentPage) {
-          link.classList.add("active");
-        }
+    fetch("navbar.html")
+      .then(res => res.text())
+      .then(data => {
+        document.getElementById("navbar-container").innerHTML = data;
+        const currentPage = location.pathname.split("/").pop();
+        document.querySelectorAll("nav a").forEach(link => {
+          if (link.getAttribute("href") === currentPage) {
+            link.classList.add("active");
+          }
+        });
       });
-    });
-</script>
+  </script>
 
 </body>
 </html>
