@@ -70,17 +70,19 @@
     }
 
     async function loadAvatars() {
+      const container = document.getElementById("avatar-list");
+      container.innerHTML = "";
+
       try {
         const res = await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/getAvatars");
+        if (!res.ok) throw new Error("Failed to fetch avatars.");
         const data = await res.json();
-        const container = document.getElementById("avatar-list");
-        container.innerHTML = "";
 
         for (const entry of data) {
           // Roblox
           if (entry.robloxUsername) {
             try {
-              const r = await fetch(`https://us-central1-poppy-d5573.cloudfunctions.net/getRobloxAvatar?username=${entry.robloxUsername}`);
+              const r = await fetch(`https://us-central1-poppy-d5573.cloudfunctions.net/getRobloxAvatar?username=${encodeURIComponent(entry.robloxUsername)}`);
               const { imageUrl } = await r.json();
               if (imageUrl) {
                 container.innerHTML += `
@@ -100,7 +102,7 @@
           // Minecraft
           if (entry.minecraftUsername) {
             try {
-              const r = await fetch(`https://us-central1-poppy-d5573.cloudfunctions.net/getMinecraftAvatar?username=${entry.minecraftUsername}`);
+              const r = await fetch(`https://us-central1-poppy-d5573.cloudfunctions.net/getMinecraftAvatar?username=${encodeURIComponent(entry.minecraftUsername)}`);
               const { imageUrl } = await r.json();
               if (imageUrl) {
                 container.innerHTML += `
@@ -119,28 +121,29 @@
         }
       } catch (err) {
         console.error("Error loading avatars:", err);
+        container.innerHTML = `<p style="color: red;">Failed to load avatars. Please try again later.</p>`;
       }
     }
 
+    // Initial load
     loadAvatars();
   </script>
 
   <script>
-  fetch("navbar.html")
-    .then(res => res.text())
-    .then(data => {
-      document.getElementById("navbar-container").innerHTML = data;
+    fetch("navbar.html")
+      .then(res => res.text())
+      .then(data => {
+        document.getElementById("navbar-container").innerHTML = data;
 
-      // Optionally mark the current nav link active
-      const currentPage = location.pathname.split("/").pop();
-      document.querySelectorAll("nav a").forEach(link => {
-        if (link.getAttribute("href") === currentPage) {
-          link.classList.add("active");
-        }
+        // Highlight active nav item
+        const currentPage = location.pathname.split("/").pop();
+        document.querySelectorAll("nav a").forEach(link => {
+          if (link.getAttribute("href") === currentPage) {
+            link.classList.add("active");
+          }
+        });
       });
-    });
-</script>
-
+  </script>
 
 </body>
 </html>

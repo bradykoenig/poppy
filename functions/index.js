@@ -241,9 +241,18 @@ exports.getMinecraftAvatar = functions.https.onRequest((req, res) => {
 
 // Cloud Function: Save Discord + Avatar info
 exports.saveAvatars = functions.https.onRequest((req, res) => {
-  cors(req, res, async () => {
+  corsHandler(req, res, async () => {
+    // CORS Preflight
+    if (req.method === "OPTIONS") {
+      res.set("Access-Control-Allow-Origin", "*");
+      res.set("Access-Control-Allow-Methods", "POST");
+      res.set("Access-Control-Allow-Headers", "Content-Type");
+      return res.status(204).send("");
+    }
+
     try {
       const { discordId, discordTag, robloxUsername, minecraftUsername } = req.body;
+
       if (!discordId || !discordTag) {
         return res.status(400).json({ error: "Missing Discord ID or tag" });
       }
@@ -256,27 +265,41 @@ exports.saveAvatars = functions.https.onRequest((req, res) => {
         timestamp: admin.firestore.FieldValue.serverTimestamp()
       });
 
+      res.set("Access-Control-Allow-Origin", "*");
       return res.status(200).json({ message: "Avatars saved successfully" });
     } catch (err) {
       console.error("Error in saveAvatars:", err);
+      res.set("Access-Control-Allow-Origin", "*");
       return res.status(500).json({ error: err.message });
     }
   });
 });
 
+
 // Cloud Function: Get all avatars
 exports.getAvatars = functions.https.onRequest((req, res) => {
-  cors(req, res, async () => {
+  corsHandler(req, res, async () => {
+    if (req.method === "OPTIONS") {
+      res.set("Access-Control-Allow-Origin", "*");
+      res.set("Access-Control-Allow-Methods", "GET");
+      res.set("Access-Control-Allow-Headers", "Content-Type");
+      return res.status(204).send("");
+    }
+
     try {
       const snapshot = await db.collection("avatars").orderBy("timestamp", "desc").get();
       const data = snapshot.docs.map(doc => doc.data());
+
+      res.set("Access-Control-Allow-Origin", "*");
       return res.status(200).json(data);
     } catch (err) {
       console.error("Error in getAvatars:", err);
+      res.set("Access-Control-Allow-Origin", "*");
       return res.status(500).json({ error: err.message });
     }
   });
 });
+
 
 exports.saveQuote = functions.https.onRequest((req, res) => {
   corsHandler(req, res, async () => {
