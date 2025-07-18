@@ -1,3 +1,4 @@
+// script.js
 function loginWithDiscord() {
   const clientId = "1395218126211125259";
   const redirectUri = "https://poppypooperz.com/oauth-callback.html";
