@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Quote Wall - Poppy Pooperz</title>
+  <title>Pooper Scooper - Poppy Pooperz</title>
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet"/>
   <style>
@@ -214,6 +214,33 @@
         flex-direction: column;
       }
     }
+
+    /* Modal confirm box */
+    #confirmOverlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    #confirmBox {
+      background: #1f1f1f;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      max-width: 300px;
+    }
+
+    #confirmBox button {
+      margin: 10px 8px 0;
+    }
+
+
   </style>
 </head>
 <body>
@@ -252,7 +279,8 @@
       onSnapshot,
       query,
       orderBy,
-      serverTimestamp
+      serverTimestamp,
+      updateDoc
     } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -320,7 +348,6 @@
       const container = document.getElementById("mediaGallery");
       container.innerHTML = "";
 
-      // Update uploader filter dropdown
       const uploaderSelect = document.getElementById("uploaderFilter");
       uploaderSelect.innerHTML = `<option value="all">All Uploaders</option>`;
       const seen = new Set();
@@ -364,14 +391,25 @@
         const actions = document.createElement("div");
         actions.className = "actions";
 
+        const likedBy = item.data.likes || [];
+        const hasLiked = user && likedBy.includes(user.id);
+
         const likeBtn = document.createElement("button");
-        likeBtn.textContent = "❤️ Like";
+        likeBtn.textContent = hasLiked ? "💔 Unlike" : "❤️ Like";
+        likeBtn.onclick = async () => {
+          const docRef = doc(db, "pooperScooper", item.id);
+          const updatedLikes = hasLiked
+            ? likedBy.filter(id => id !== user.id)
+            : [...likedBy, user.id];
+
+          await updateDoc(docRef, { likes: updatedLikes });
+        };
         actions.appendChild(likeBtn);
 
         if (user && user.id === item.data.uploaderId) {
           const delBtn = document.createElement("button");
           delBtn.textContent = "🗑 Delete";
-          delBtn.onclick = () => deleteMedia(item.id);
+          delBtn.onclick = () => showConfirm(item.id);
           actions.appendChild(delBtn);
         }
 
@@ -380,11 +418,33 @@
       });
     }
 
+
     const q = query(collection(db, "pooperScooper"), orderBy("createdAt", "desc"));
     onSnapshot(q, (snapshot) => {
       mediaItems = snapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }));
       renderGallery();
     });
+
+    let pendingDeleteId = null;
+
+    window.showConfirm = function showConfirm(id) {
+      pendingDeleteId = id;
+      document.getElementById("confirmOverlay").style.display = "flex";
+    };
+
+    window.cancelDelete = function cancelDelete() {
+      pendingDeleteId = null;
+      document.getElementById("confirmOverlay").style.display = "none";
+    };
+
+    window.confirmDelete = async function confirmDelete() {
+      if (!pendingDeleteId) return;
+      await deleteDoc(doc(db, "pooperScooper", pendingDeleteId));
+      pendingDeleteId = null;
+      document.getElementById("confirmOverlay").style.display = "none";
+    };
+
+
   </script>
 
   <script>
@@ -403,6 +463,13 @@
       });
   </script>
 
+  <div id="confirmOverlay">
+  <div id="confirmBox">
+    <p>Are you sure you want to delete this media?</p>
+    <button onclick="confirmDelete()">Yes, delete</button>
+    <button onclick="cancelDelete()">Cancel</button>
+  </div>
+</div>
 
 </body>
 </html>
