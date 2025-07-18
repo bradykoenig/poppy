@@ -171,6 +171,14 @@
 </head>
 <body>
 
+  <script>
+    const discordUser = JSON.parse(localStorage.getItem("discordUser"));
+    if (!discordUser) {
+      // Redirect to index.html if not logged in
+      window.location.href = "index.html";
+    }
+  </script>
+
   <div id="navbar-container"></div>
 
   <div class="main-layout">

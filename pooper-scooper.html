@@ -157,6 +157,14 @@
 
   <div id="navbar-container"></div>
 
+  <script>
+    const discordUser = JSON.parse(localStorage.getItem("discordUser"));
+    if (!discordUser) {
+      // Redirect to index.html if not logged in
+      window.location.href = "index.html";
+    }
+  </script>
+
   <div class="upload-section">
     <h1>Pooper Scooper 🧻</h1>
     <input type="file" id="fileInput" accept="image/*,video/*">

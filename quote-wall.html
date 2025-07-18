@@ -258,6 +258,15 @@
   </style>
 </head>
 <body>
+
+  <script>
+    const discordUser = JSON.parse(localStorage.getItem("discordUser"));
+    if (!discordUser) {
+      // Redirect to index.html if not logged in
+      window.location.href = "index.html";
+    }
+  </script>
+
   <header>
     <div class="logo">
       <img src="assets/logo.png" alt="Poppy Pooperz Logo" />
