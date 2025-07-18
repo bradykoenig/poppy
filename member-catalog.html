@@ -9,141 +9,162 @@
 </head>
 <body>
 
-  <div id="navbar-container"></div>
+<div id="navbar-container"></div>
 
-  <main class="catalog-page">
-    <h1>Member Avatar Catalog</h1>
+<main class="catalog-page">
+  <h1>Member Avatar Catalog</h1>
 
-    <div class="form-container">
-      <label for="roblox-username">Roblox Username:</label>
-      <input type="text" id="roblox-username" placeholder="Enter Roblox username" />
+  <div class="form-container">
+    <label for="roblox-username">Roblox Username:</label>
+    <input type="text" id="roblox-username" placeholder="Enter Roblox username" />
 
-      <label for="minecraft-username">Minecraft Username:</label>
-      <input type="text" id="minecraft-username" placeholder="Enter Minecraft username" />
+    <label for="minecraft-username">Minecraft Username:</label>
+    <input type="text" id="minecraft-username" placeholder="Enter Minecraft username" />
 
-      <button onclick="saveAvatars()">Save Avatars</button>
-    </div>
+    <button onclick="saveAvatars()">Save Avatars</button>
+  </div>
 
-    <div class="avatars-grid" id="avatar-list">
-      <!-- Avatar cards will appear here -->
-    </div>
-  </main>
+  <div class="filter-bar" style="text-align:center; margin: 30px 0;">
+    <select id="platformFilter" onchange="renderAvatars()">
+      <option value="all">All Platforms</option>
+      <option value="roblox">Roblox</option>
+      <option value="minecraft">Minecraft</option>
+    </select>
 
-  <script>
-    async function saveAvatars() {
-      const discordUser = JSON.parse(localStorage.getItem("discordUser"));
-      if (!discordUser) {
-        alert("You must be logged in with Discord to save avatars.");
-        return;
-      }
+    <select id="submitterFilter" onchange="renderAvatars()">
+      <option value="all">All Submitters</option>
+    </select>
+  </div>
 
-      const robloxUsername = document.getElementById("roblox-username").value.trim();
-      const minecraftUsername = document.getElementById("minecraft-username").value.trim();
+  <div class="avatars-grid" id="avatar-list">
+    <!-- Avatar cards will appear here -->
+  </div>
+</main>
 
-      if (!robloxUsername && !minecraftUsername) {
-        alert("Please enter at least one username.");
-        return;
-      }
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+  import {
+    getFirestore, collection, onSnapshot, query, orderBy
+  } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-      try {
-        const res = await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/saveAvatars", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            discordId: discordUser.id,
-            discordTag: `${discordUser.username}#${discordUser.discriminator}`,
-            robloxUsername,
-            minecraftUsername
-          })
-        });
+  const firebaseConfig = {
+    apiKey: "AIzaSyBOCaso0cw72WxrObQTOlcwSXzEVV2HP7U",
+    authDomain: "poppy-d5573.firebaseapp.com",
+    projectId: "poppy-d5573"
+  };
 
-        const result = await res.json();
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  let avatars = [];
 
-        if (!res.ok) throw new Error(result.message || "Unknown error saving avatars.");
+  async function saveAvatars() {
+    const discordUser = JSON.parse(localStorage.getItem("discordUser"));
+    if (!discordUser) return alert("You must be logged in with Discord to save avatars.");
 
-        alert(result.message || "Avatars saved!");
-        loadAvatars();
-      } catch (err) {
-        console.error("Error saving avatars:", err);
-        alert("Failed to save avatars: " + err.message);
-      }
+    const robloxUsername = document.getElementById("roblox-username").value.trim();
+    const minecraftUsername = document.getElementById("minecraft-username").value.trim();
+
+    if (!robloxUsername && !minecraftUsername) {
+      alert("Please enter at least one username.");
+      return;
     }
 
-    async function loadAvatars() {
-      const container = document.getElementById("avatar-list");
-      container.innerHTML = "";
-
-      try {
-        const res = await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/getAvatars");
-        if (!res.ok) throw new Error("Failed to fetch avatars.");
-        const data = await res.json();
-
-        for (const entry of data) {
-          // Roblox
-          if (entry.robloxUsername) {
-            try {
-              const r = await fetch(`https://us-central1-poppy-d5573.cloudfunctions.net/getRobloxAvatar?username=${encodeURIComponent(entry.robloxUsername)}`);
-              const { imageUrl } = await r.json();
-              if (imageUrl) {
-                container.innerHTML += `
-                  <div class="avatar-card">
-                    <img src="${imageUrl}" alt="Roblox Avatar" />
-                    <div class="platform">Roblox</div>
-                    <div class="username">${entry.robloxUsername}</div>
-                    <div class="submitted">Submitted by: ${entry.discordTag}</div>
-                  </div>
-                `;
-              }
-            } catch (err) {
-              console.warn("Roblox fetch failed:", err);
-            }
-          }
-
-          // Minecraft
-          if (entry.minecraftUsername) {
-            try {
-              const r = await fetch(`https://us-central1-poppy-d5573.cloudfunctions.net/getMinecraftAvatar?username=${encodeURIComponent(entry.minecraftUsername)}`);
-              const { imageUrl } = await r.json();
-              if (imageUrl) {
-                container.innerHTML += `
-                  <div class="avatar-card">
-                    <img src="${imageUrl}" alt="Minecraft Avatar" />
-                    <div class="platform">Minecraft</div>
-                    <div class="username">${entry.minecraftUsername}</div>
-                    <div class="submitted">Submitted by: ${entry.discordTag}</div>
-                  </div>
-                `;
-              }
-            } catch (err) {
-              console.warn("Minecraft fetch failed:", err);
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Error loading avatars:", err);
-        container.innerHTML = `<p style="color: red;">Failed to load avatars. Please try again later.</p>`;
-      }
-    }
-
-    // Initial load
-    loadAvatars();
-  </script>
-
-  <script>
-    fetch("navbar.html")
-      .then(res => res.text())
-      .then(data => {
-        document.getElementById("navbar-container").innerHTML = data;
-
-        // Highlight active nav item
-        const currentPage = location.pathname.split("/").pop();
-        document.querySelectorAll("nav a").forEach(link => {
-          if (link.getAttribute("href") === currentPage) {
-            link.classList.add("active");
-          }
-        });
+    try {
+      const res = await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/saveAvatars", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          discordId: discordUser.id,
+          discordTag: `${discordUser.username}#${discordUser.discriminator}`,
+          robloxUsername,
+          minecraftUsername
+        })
       });
-  </script>
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message || "Unknown error saving avatars.");
+      alert(result.message || "Avatars saved!");
+    } catch (err) {
+      console.error("Error saving avatars:", err);
+      alert("Failed to save avatars: " + err.message);
+    }
+  }
+
+  async function renderAvatars() {
+    const container = document.getElementById("avatar-list");
+    const platform = document.getElementById("platformFilter").value;
+    const submitter = document.getElementById("submitterFilter").value;
+    container.innerHTML = "";
+
+    const seen = new Set();
+    const submitterSelect = document.getElementById("submitterFilter");
+    submitterSelect.innerHTML = `<option value="all">All Submitters</option>`;
+    avatars.forEach(a => {
+      if (!seen.has(a.discordTag)) {
+        const opt = document.createElement("option");
+        opt.value = a.discordTag;
+        opt.textContent = a.discordTag;
+        submitterSelect.appendChild(opt);
+        seen.add(a.discordTag);
+      }
+    });
+
+    for (const entry of avatars) {
+      if (submitter !== "all" && entry.discordTag !== submitter) continue;
+
+      if ((platform === "roblox" || platform === "all") && entry.robloxUsername) {
+        try {
+          const r = await fetch(`https://us-central1-poppy-d5573.cloudfunctions.net/getRobloxAvatar?username=${entry.robloxUsername}`);
+          const { imageUrl } = await r.json();
+          if (imageUrl) container.innerHTML += getCardHtml("Roblox", imageUrl, entry.robloxUsername, entry.discordTag);
+        } catch (err) {
+          console.warn("Roblox fetch failed:", err);
+        }
+      }
+
+      if ((platform === "minecraft" || platform === "all") && entry.minecraftUsername) {
+        try {
+          const r = await fetch(`https://us-central1-poppy-d5573.cloudfunctions.net/getMinecraftAvatar?username=${entry.minecraftUsername}`);
+          const { imageUrl } = await r.json();
+          if (imageUrl) container.innerHTML += getCardHtml("Minecraft", imageUrl, entry.minecraftUsername, entry.discordTag);
+        } catch (err) {
+          console.warn("Minecraft fetch failed:", err);
+        }
+      }
+    }
+  }
+
+  function getCardHtml(platform, imageUrl, username, discordTag) {
+    return `
+      <div class="avatar-card">
+        <img src="${imageUrl}" alt="${platform} Avatar" />
+        <div class="platform">${platform}</div>
+        <div class="username">${username}</div>
+        <div class="submitted">Submitted by: ${discordTag}</div>
+      </div>
+    `;
+  }
+
+  const avatarQuery = query(collection(db, "avatars"), orderBy("timestamp", "desc"));
+  onSnapshot(avatarQuery, snapshot => {
+    avatars = snapshot.docs.map(doc => doc.data());
+    renderAvatars();
+  });
+</script>
+
+<script>
+  fetch("navbar.html")
+    .then(res => res.text())
+    .then(data => {
+      document.getElementById("navbar-container").innerHTML = data;
+      const currentPage = location.pathname.split("/").pop();
+      document.querySelectorAll("nav a").forEach(link => {
+        if (link.getAttribute("href") === currentPage) {
+          link.classList.add("active");
+        }
+      });
+    });
+</script>
 
 </body>
 </html>
