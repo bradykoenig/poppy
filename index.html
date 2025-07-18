@@ -103,6 +103,14 @@
   </style>
 </head>
 <body>
+
+  <script>
+    const user = localStorage.getItem("discordUser");
+    if (user) {
+      window.location.href = "home.html";
+    }
+  </script>
+
   
   <div class="container">
     <h1>Welcome to Poppy Pooperz</h1>
