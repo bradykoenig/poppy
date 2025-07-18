@@ -3,18 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <title>Logging In...</title>
-  <link rel="stylesheet" href="style.css" />
   <style>
     body {
-      background: #0e0e0e;
+      background-color: #0e0e0e;
       color: white;
       font-family: 'Outfit', sans-serif;
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
       height: 100vh;
       font-size: 24px;
-      font-weight: 700;
+      font-weight: bold;
     }
   </style>
 </head>
@@ -22,49 +21,48 @@
   Logging in...
 
   <script>
-  async function exchangeCodeForUser(code) {
-    console.log("🔁 Exchanging code for token:", code);
+    async function exchangeCode() {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get("code");
 
-    try {
-      const res = await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/exchangeCode", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code })
-      });
-
-      console.log("🔁 Exchange response status:", res.status);
-      if (!res.ok) {
-        const errText = await res.text();
-        console.error("❌ Token exchange failed:", errText);
-        document.body.innerHTML = `<p style="color: red;">Token exchange failed:<br>${errText}</p>`;
+      if (!code) {
+        console.error("No code provided in URL.");
+        document.body.textContent = "Missing authorization code.";
         return;
       }
 
-      const { user, guilds } = await res.json();
-      console.log("✅ User fetched:", user);
-      console.log("✅ Guilds fetched:", guilds);
+      console.log("Exchanging code:", code);
 
-      localStorage.setItem("discordUser", JSON.stringify(user));
-      localStorage.setItem("discordGuilds", JSON.stringify(guilds));
+      try {
+        const res = await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/exchangeCode", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ code })
+        });
 
-      window.location.href = "home.html";
-    } catch (err) {
-      console.error("❌ OAuth error:", err);
-      document.body.innerHTML = `<p style="color: red;">Login failed:<br>${err.message}</p>`;
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error("Exchange failed:", errText);
+          document.body.innerHTML = `<p style="color:red;">Login failed:<br>${errText}</p>`;
+          return;
+        }
+
+        const data = await res.json();
+        console.log("Exchange successful:", data);
+
+        localStorage.setItem("discordUser", JSON.stringify(data.user));
+        localStorage.setItem("discordGuilds", JSON.stringify(data.guilds));
+
+        window.location.href = "home.html";
+      } catch (err) {
+        console.error("OAuth error:", err);
+        document.body.innerHTML = `<p style="color:red;">OAuth error:<br>${err.message}</p>`;
+      }
     }
-  }
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const code = urlParams.get("code");
-  console.log("🔍 Code from URL:", code);
-
-  if (code) {
-    exchangeCodeForUser(code);
-  } else {
-    console.error("❌ No code provided in URL");
-    document.body.innerHTML = `<p style="color: red;">Missing authorization code.</p>`;
-  }
-</script>
-
+    exchangeCode();
+  </script>
 </body>
 </html>
