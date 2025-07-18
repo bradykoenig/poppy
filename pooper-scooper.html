@@ -266,7 +266,7 @@
 
     let mediaItems = [];
 
-    async function uploadMedia() {
+    window.uploadMedia = async function uploadMedia() {
       const file = document.getElementById("fileInput").files[0];
       const user = JSON.parse(localStorage.getItem("discordUser"));
 
@@ -318,14 +318,9 @@
       const uploader = document.getElementById("uploaderFilter").value;
       const user = JSON.parse(localStorage.getItem("discordUser"));
       const container = document.getElementById("mediaGallery");
-
       container.innerHTML = "";
 
-      const filtered = mediaItems.filter(item => {
-        return (type === "all" || item.data.type === type) &&
-               (uploader === "all" || item.data.uploaderId === uploader);
-      });
-
+      // Update uploader filter dropdown
       const uploaderSelect = document.getElementById("uploaderFilter");
       uploaderSelect.innerHTML = `<option value="all">All Uploaders</option>`;
       const seen = new Set();
@@ -339,18 +334,32 @@
         }
       });
 
+      const filtered = mediaItems.filter(item => {
+        return (type === "all" || item.data.type === type) &&
+              (uploader === "all" || item.data.uploaderId === uploader);
+      });
+
       filtered.forEach(item => {
         const card = document.createElement("div");
         card.className = "media-card";
 
         if (item.data.type === "image") {
-          card.innerHTML += `<img src="${item.data.url}" alt="uploaded image">`;
+          const img = document.createElement("img");
+          img.src = item.data.url;
+          img.alt = "uploaded image";
+          card.appendChild(img);
         } else {
-          card.innerHTML += `<video src="${item.data.url}" controls></video>`;
+          const video = document.createElement("video");
+          video.src = item.data.url;
+          video.controls = true;
+          card.appendChild(video);
         }
 
-        const date = item.data.createdAt?.toDate?.().toLocaleString() || "Just now";
-        card.innerHTML += `<div class="meta">Uploaded by <strong>${item.data.uploader}</strong><br>${date}</div>`;
+        const date = item.data.createdAt?.toDate?.()?.toLocaleString?.() || "Just now";
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        meta.innerHTML = `Uploaded by <strong>${item.data.uploader}</strong><br>${date}`;
+        card.appendChild(meta);
 
         const actions = document.createElement("div");
         actions.className = "actions";
