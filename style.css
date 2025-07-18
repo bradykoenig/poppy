@@ -3,10 +3,15 @@ html, body {
   margin: 0;
   padding: 0;
   height: 100%;
-  font-family: 'Outfit', sans-serif;
-  background: linear-gradient(to bottom right, #0f0f0f, #1a1a1a);
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0e0e0e, #1a1a1a);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-size: cover;
   color: white;
+  font-family: 'Outfit', sans-serif;
 }
+
 
 body {
   display: flex;
@@ -138,7 +143,7 @@ nav a.active {
 
 /* === Avatar Catalog Styles === */
 .catalog-page {
-  flex-grow: 1;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -347,5 +352,27 @@ button:hover {
 
   button {
     width: 100%;
+  }
+
+    .combined-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: #1c1c1c;
+    border-radius: 10px;
+    max-width: 300px;
+    margin: auto;
+  }
+
+  .avatar-platform {
+    text-align: center;
+  }
+
+  .avatar-platform img {
+    width: 120px;
+    height: auto;
+    border-radius: 8px;
   }
 }

@@ -96,6 +96,7 @@
     const submitter = document.getElementById("submitterFilter").value;
     container.innerHTML = "";
 
+    // Update submitter filter
     const seen = new Set();
     const submitterSelect = document.getElementById("submitterFilter");
     submitterSelect.innerHTML = `<option value="all">All Submitters</option>`;
@@ -112,27 +113,57 @@
     for (const entry of avatars) {
       if (submitter !== "all" && entry.discordTag !== submitter) continue;
 
+      let robloxImage = "";
+      let minecraftImage = "";
+
+      // Fetch Roblox avatar
       if ((platform === "roblox" || platform === "all") && entry.robloxUsername) {
         try {
           const r = await fetch(`https://us-central1-poppy-d5573.cloudfunctions.net/getRobloxAvatar?username=${entry.robloxUsername}`);
           const { imageUrl } = await r.json();
-          if (imageUrl) container.innerHTML += getCardHtml("Roblox", imageUrl, entry.robloxUsername, entry.discordTag);
+          if (imageUrl) {
+            robloxImage = `<div class="avatar-platform">
+              <img src="${imageUrl}" alt="Roblox Avatar" />
+              <div class="platform">Roblox</div>
+              <div class="username">${entry.robloxUsername}</div>
+            </div>`;
+          }
         } catch (err) {
           console.warn("Roblox fetch failed:", err);
         }
       }
 
+      // Fetch Minecraft avatar
       if ((platform === "minecraft" || platform === "all") && entry.minecraftUsername) {
         try {
           const r = await fetch(`https://us-central1-poppy-d5573.cloudfunctions.net/getMinecraftAvatar?username=${entry.minecraftUsername}`);
           const { imageUrl } = await r.json();
-          if (imageUrl) container.innerHTML += getCardHtml("Minecraft", imageUrl, entry.minecraftUsername, entry.discordTag);
+          if (imageUrl) {
+            minecraftImage = `<div class="avatar-platform">
+              <img src="${imageUrl}" alt="Minecraft Avatar" />
+              <div class="platform">Minecraft</div>
+              <div class="username">${entry.minecraftUsername}</div>
+            </div>`;
+          }
         } catch (err) {
           console.warn("Minecraft fetch failed:", err);
         }
       }
+
+      // Only show card if at least one avatar is visible
+      if (robloxImage || minecraftImage) {
+        container.innerHTML += `
+          <div class="avatar-card combined-card">
+            ${robloxImage}
+            ${minecraftImage}
+            <div class="submitted">Submitted by: ${entry.discordTag}</div>
+          </div>
+        `;
+      }
     }
   }
+
+
 
   function getCardHtml(platform, imageUrl, username, discordTag) {
     return `
