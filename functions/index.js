@@ -130,27 +130,37 @@ exports.uploadMedia = functions.https.onRequest((req, res) => {
 
 // Cloud Function: Get Roblox Avatar
 exports.getRobloxAvatar = functions.https.onRequest((req, res) => {
-  cors(req, res, async () => {
+  corsHandler(req, res, async () => {
     try {
       const username = req.query.username;
-      if (!username) return res.status(400).json({ error: "Missing username" });
+      if (!username) {
+        res.set("Access-Control-Allow-Origin", "*");
+        return res.status(400).json({ error: "Missing username" });
+      }
 
-      console.log("Looking up Roblox ID for:", username);
       const userId = await getRobloxUserId(username);
-      console.log("Resolved ID:", userId);
-
-      if (!userId) return res.status(404).json({ error: "Roblox user not found" });
+      if (!userId) {
+        res.set("Access-Control-Allow-Origin", "*");
+        return res.status(404).json({ error: "User not found" });
+      }
 
       const imageUrl = await getAvatarImageUrl(userId);
-      if (!imageUrl) return res.status(202).json({ message: "Avatar not ready yet" });
+      if (!imageUrl) {
+        res.set("Access-Control-Allow-Origin", "*");
+        return res.status(202).json({ message: "Avatar not ready yet" });
+      }
 
+      res.set("Access-Control-Allow-Origin", "*");
       return res.status(200).json({ imageUrl });
     } catch (err) {
       console.error("Error in getRobloxAvatar:", err);
+      res.set("Access-Control-Allow-Origin", "*");
       return res.status(500).json({ error: err.message });
     }
   });
 });
+
+
 
 exports.discordLogin = functions.https.onRequest((req, res) => {
   cors(req, res, async () => {
@@ -207,36 +217,38 @@ exports.discordLogin = functions.https.onRequest((req, res) => {
 
 // Cloud Function: Get Minecraft Avatar
 exports.getMinecraftAvatar = functions.https.onRequest((req, res) => {
-  cors(req, res, async () => {
+  corsHandler(req, res, async () => {
     try {
       const username = req.query.username;
-      if (!username) return res.status(400).json({ error: "Missing username" });
+      if (!username) {
+        res.set("Access-Control-Allow-Origin", "*");
+        return res.status(400).json({ error: "Missing username" });
+      }
 
-      // Step 1: Resolve UUID from Mojang
       const uuidRes = await fetch(`https://api.mojang.com/users/profiles/minecraft/${encodeURIComponent(username)}`);
       if (uuidRes.status === 204) {
+        res.set("Access-Control-Allow-Origin", "*");
         return res.status(404).json({ error: "Minecraft username not found" });
       }
+
       const { id: uuid } = await uuidRes.json();
-
-      // Step 2: Get Crafatar image using UUID
       const avatarUrl = `https://crafatar.com/renders/body/${uuid}?size=720`;
+
       const testRes = await fetch(avatarUrl);
-
-      console.log(`Checking Crafatar URL: ${avatarUrl} | Status: ${testRes.status}`);
-
       if (!testRes.ok) {
+        res.set("Access-Control-Allow-Origin", "*");
         return res.status(404).json({ error: "Minecraft avatar not found" });
       }
 
+      res.set("Access-Control-Allow-Origin", "*");
       return res.status(200).json({ imageUrl: avatarUrl });
     } catch (err) {
       console.error("Error in getMinecraftAvatar:", err);
+      res.set("Access-Control-Allow-Origin", "*");
       return res.status(500).json({ error: err.message });
     }
   });
 });
-
 
 
 // Cloud Function: Save Discord + Avatar info
@@ -281,7 +293,7 @@ exports.getAvatars = functions.https.onRequest((req, res) => {
   corsHandler(req, res, async () => {
     if (req.method === "OPTIONS") {
       res.set("Access-Control-Allow-Origin", "*");
-      res.set("Access-Control-Allow-Methods", "GET");
+      res.set("Access-Control-Allow-Methods", "GET, POST");
       res.set("Access-Control-Allow-Headers", "Content-Type");
       return res.status(204).send("");
     }
