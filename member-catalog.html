@@ -6,6 +6,26 @@
   <title>Member Avatar Catalog - Poppy Pooperz</title>
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet"/>
+  <style>
+    .loader {
+      display: none;
+      justify-content: center;
+      align-items: center;
+      margin: 30px 0;
+    }
+    .spinner {
+      border: 6px solid rgba(255,255,255,0.1);
+      border-top: 6px solid #9a6bff;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body>
 
@@ -34,6 +54,10 @@
     <select id="submitterFilter" onchange="renderAvatars()">
       <option value="all">All Submitters</option>
     </select>
+  </div>
+
+  <div id="loading" class="loader">
+    <div class="spinner"></div>
   </div>
 
   <div class="avatars-grid" id="avatar-list">
@@ -92,11 +116,13 @@
 
   async function renderAvatars() {
     const container = document.getElementById("avatar-list");
+    const loading = document.getElementById("loading");
     const platform = document.getElementById("platformFilter").value;
     const submitter = document.getElementById("submitterFilter").value;
-    container.innerHTML = "";
 
-    // Update submitter filter
+    container.innerHTML = "";
+    loading.style.display = "flex";
+
     const seen = new Set();
     const submitterSelect = document.getElementById("submitterFilter");
     submitterSelect.innerHTML = `<option value="all">All Submitters</option>`;
@@ -116,7 +142,6 @@
       let robloxImage = "";
       let minecraftImage = "";
 
-      // Fetch Roblox avatar
       if ((platform === "roblox" || platform === "all") && entry.robloxUsername) {
         try {
           const r = await fetch(`https://us-central1-poppy-d5573.cloudfunctions.net/getRobloxAvatar?username=${entry.robloxUsername}`);
@@ -133,7 +158,6 @@
         }
       }
 
-      // Fetch Minecraft avatar
       if ((platform === "minecraft" || platform === "all") && entry.minecraftUsername) {
         try {
           const r = await fetch(`https://us-central1-poppy-d5573.cloudfunctions.net/getMinecraftAvatar?username=${entry.minecraftUsername}`);
@@ -150,7 +174,6 @@
         }
       }
 
-      // Only show card if at least one avatar is visible
       if (robloxImage || minecraftImage) {
         container.innerHTML += `
           <div class="avatar-card combined-card">
@@ -161,19 +184,8 @@
         `;
       }
     }
-  }
 
-
-
-  function getCardHtml(platform, imageUrl, username, discordTag) {
-    return `
-      <div class="avatar-card">
-        <img src="${imageUrl}" alt="${platform} Avatar" />
-        <div class="platform">${platform}</div>
-        <div class="username">${username}</div>
-        <div class="submitted">Submitted by: ${discordTag}</div>
-      </div>
-    `;
+    loading.style.display = "none";
   }
 
   const avatarQuery = query(collection(db, "avatars"), orderBy("timestamp", "desc"));
@@ -182,11 +194,9 @@
     renderAvatars();
   });
 
-  // ✅ Expose saveAvatars globally for inline use
   window.saveAvatars = saveAvatars;
   window.renderAvatars = renderAvatars;
 
-  // Optional: Attach click handler directly instead of inline onclick
   document.getElementById("saveBtn").addEventListener("click", saveAvatars);
 </script>
 
