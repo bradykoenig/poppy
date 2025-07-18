@@ -336,61 +336,6 @@ exports.getQuotes = functions.https.onRequest((req, res) => {
   });
 });
 
-exports.updatePresence = functions.https.onRequest((req, res) => {
-  corsHandler(req, res, async () => {
-    const { discordId, discordTag, avatar } = req.body;
-    if (!discordId || !discordTag || !avatar) {
-      return res.status(400).json({ message: "Missing required fields" });
-    }
-
-    try {
-      const ref = db.collection("presence").doc(discordId);
-      const doc = await ref.get();
-      const now = admin.firestore.Timestamp.now(); // only call this once
-
-      const updateData = {
-        discordTag,
-        avatar,
-        lastSeen: now,
-        visits: doc.exists ? (doc.data().visits || 1) + 1 : 1
-      };
-
-      await ref.set(updateData, { merge: true });
-      res.status(200).json({ message: "Presence updated" });
-    } catch (err) {
-      console.error("Failed to update presence:", err);
-      res.status(500).json({ message: "Server error" });
-    }
-  });
-});
-
-
-// Your current getPresence is totally fine
-exports.getPresence = functions.https.onRequest((req, res) => {
-  corsHandler(req, res, async () => {
-    try {
-      const snap = await db.collection("presence").get();
-      const users = [];
-
-      snap.forEach(doc => {
-        const data = doc.data();
-        users.push({
-          discordId: doc.id,
-          discordTag: data.discordTag || "Unknown#0000",
-          avatar: data.avatar || "https://cdn.discordapp.com/embed/avatars/0.png",
-          lastSeen: data.lastSeen?.toDate().toISOString(),
-          visits: data.visits || 1
-        });
-      });
-
-      res.status(200).json(users);
-    } catch (err) {
-      console.error("Failed to fetch presence:", err);
-      res.status(500).json({ message: "Server error" });
-    }
-  });
-});
-
 
 //OAuth Code Exchange
 exports.exchangeCode = functions.https.onRequest((req, res) => {

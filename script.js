@@ -1,3 +1,4 @@
+// Discord login redirect
 function loginWithDiscord() {
   const clientId = "1395218126211125259";
   const redirectUri = "https://poppypooperz.com/oauth-callback.html";
@@ -9,6 +10,7 @@ function loginWithDiscord() {
   window.location.href = discordOAuthUrl;
 }
 
+// Load user info from localStorage
 document.addEventListener("DOMContentLoaded", () => {
   const userInfoDiv = document.getElementById("user-info");
   const storedUser = localStorage.getItem("discordUser");
@@ -24,33 +26,56 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-async function updatePresence() {
-  const user = JSON.parse(localStorage.getItem("discordUser"));
-  if (!user) return;
+// Firebase presence tracking (client-side)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  serverTimestamp,
+  increment
+} from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
+// 🔥 Your Firebase config here:
+const firebaseConfig = {
+  apiKey: "AIzaSyBOCaso0cw72WxrObQTOlcwSXzEVV2HP7U",
+  authDomain: "poppy-d5573.firebaseapp.com",
+  projectId: "poppy-d5573",
+  // You can add storageBucket, messagingSenderId, appId if needed
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Presence updater
+async function updatePresenceClient(user) {
   const avatarUrl = user.avatar
     ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
     : `https://cdn.discordapp.com/embed/avatars/0.png`;
 
   try {
-    const response = await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/updatePresence", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        discordId: user.id,
-        discordTag: `${user.username}#${user.discriminator}`,
-        avatar: avatarUrl
-      })
-    });
+    const ref = doc(db, "presence", user.id);
+    await setDoc(ref, {
+      discordTag: `${user.username}#${user.discriminator}`,
+      avatar: avatarUrl,
+      lastSeen: serverTimestamp(),
+      visits: increment(1)
+    }, { merge: true });
 
-    const json = await response.json();
-    console.log("Presence update response:", json);
+    console.log("✅ Presence updated");
   } catch (err) {
-    console.error("Presence update failed:", err);
+    console.error("❌ Failed to update presence:", err);
   }
 }
 
-
-updatePresence();
-setInterval(updatePresence, 60000); // update every minute
-
+// Initial and interval presence updates
+const stored = localStorage.getItem("discordUser");
+if (stored) {
+  try {
+    const discordUser = JSON.parse(stored);
+    updatePresenceClient(discordUser);
+    setInterval(() => updatePresenceClient(discordUser), 60000);
+  } catch (err) {
+    console.error("Invalid Discord user:", err);
+  }
+}

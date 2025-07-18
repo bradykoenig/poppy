@@ -154,7 +154,24 @@
     <div class="user-list" id="recentVisitors"></div>
   </div>
 
-  <script>
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBOCaso0cw72WxrObQTOlcwSXzEVV2HP7U",
+      authDomain: "poppy-d5573.firebaseapp.com",
+      projectId: "poppy-d5573"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
     function timeAgo(timestamp) {
       const now = Date.now();
       const diffMs = now - new Date(timestamp).getTime();
@@ -165,39 +182,37 @@
     }
 
     async function loadPresence() {
-      try {
-        const res = await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/getPresence");
-        const data = await res.json();
+      const onlineEl = document.getElementById("onlineUsers");
+      const recentEl = document.getElementById("recentVisitors");
 
-        const onlineEl = document.getElementById("onlineUsers");
-        const recentEl = document.getElementById("recentVisitors");
+      onlineEl.innerHTML = "";
+      recentEl.innerHTML = "";
 
-        onlineEl.innerHTML = "";
-        recentEl.innerHTML = "";
+      const now = Date.now();
+      const snap = await getDocs(collection(db, "presence"));
 
-        const now = Date.now();
+      snap.forEach(doc => {
+        const data = doc.data();
+        const lastSeen = data.lastSeen?.toDate?.();
+        if (!lastSeen) return;
 
-        for (const user of data) {
-          const card = document.createElement("div");
-          card.className = "user-card";
-          card.innerHTML = `
-            <img src="${user.avatar}" alt="avatar">
-            <div class="user-info">
-              <div class="tag">${user.discordTag}</div>
-              <div class="seen">Last seen ${timeAgo(user.lastSeen)}</div>
-              <div class="visits">Visits: ${user.visits || 1}</div>
-            </div>
-          `;
+        const card = document.createElement("div");
+        card.className = "user-card";
+        card.innerHTML = `
+          <img src="${data.avatar}" alt="avatar">
+          <div class="user-info">
+            <div class="tag">${data.discordTag}</div>
+            <div class="seen">Last seen ${timeAgo(lastSeen)}</div>
+            <div class="visits">Visits: ${data.visits || 1}</div>
+          </div>
+        `;
 
-          if (now - new Date(user.lastSeen).getTime() < 5 * 60 * 1000) {
-            onlineEl.appendChild(card);
-          } else {
-            recentEl.appendChild(card);
-          }
+        if (now - lastSeen.getTime() < 5 * 60 * 1000) {
+          onlineEl.appendChild(card);
+        } else {
+          recentEl.appendChild(card);
         }
-      } catch (err) {
-        console.error("Failed to load presence data:", err);
-      }
+      });
     }
 
     loadPresence();
