@@ -439,10 +439,15 @@
 
     window.confirmDelete = async function confirmDelete() {
       if (!pendingDeleteId) return;
-      await deleteDoc(doc(db, "pooperScooper", pendingDeleteId));
+      const idToDelete = pendingDeleteId;
       pendingDeleteId = null;
+
+      // Hide modal first to avoid it flashing back
       document.getElementById("confirmOverlay").style.display = "none";
+
+      await deleteDoc(doc(db, "pooperScooper", idToDelete));
     };
+
 
 
   </script>
