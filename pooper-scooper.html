@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Quote Wall - Poppy Pooperz</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet"/>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Outfit', sans-serif;
+      background: linear-gradient(to bottom right, #0f0f0f, #1a1a1a);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #161616;
+      padding: 20px 40px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+      flex-wrap: wrap;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      font-size: 24px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    .logo img {
+      height: 40px;
+      margin-right: 10px;
+      border-radius: 50%;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    nav a {
+      color: #aaa;
+      text-decoration: none;
+      margin-left: 20px;
+      font-weight: 500;
+      transition: 0.2s ease;
+    }
+
+    nav a:hover {
+      color: #fff;
+    }
+
+    nav a.active {
+      color: #ffffff;
+      font-weight: 600;
+      border-bottom: 2px solid #8a64ff;
+    }
+
+    .main-layout {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      font-size: 34px;
+      font-weight: 800;
+      margin: 30px 40px 25px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(to right, #8a64ff, #7cf4f4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+      line-height: 1.2;
+    }
+
+
+    .upload-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 30px;
+    }
+
+    input[type="file"] {
+      padding: 8px;
+      background: #222;
+      border-radius: 6px;
+      color: white;
+      border: none;
+      width: 280px;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .upload-btn {
+      background-color: #9b5cff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .upload-btn:hover {
+      background-color: #b184ff;
+    }
+
+    button {
+      background-color: #8a64ff;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #a187ff;
+    }
+
+    .filter-bar {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 25px;
+      flex-wrap: wrap;
+    }
+
+    select {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: none;
+      background: #1f1f1f;
+      color: white;
+      font-size: 14px;
+    }
+
+    .gallery {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    .media-card {
+      background: #1a1a1a;
+      border-radius: 10px;
+      padding: 14px;
+      max-width: 300px;
+      width: 100%;
+      text-align: center;
+      position: relative;
+      box-shadow: 0 0 6px rgba(0,0,0,0.3);
+    }
+
+    .media-card img,
+    .media-card video {
+      width: 100%;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
+    .meta {
+      font-size: 13px;
+      color: #ccc;
+      margin-bottom: 10px;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+    }
+
+    .actions button {
+      background: none;
+      border: none;
+      color: #8a64ff;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 0;
+    }
+
+    .actions button:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 500px) {
+      h1 {
+        font-size: 1.8em;
+      }
+      .upload-section {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="navbar-container"></div>
+
+  <div class="upload-section">
+    <h1>Pooper Scooper 🧻</h1>
+    <input type="file" id="fileInput" accept="image/*,video/*">
+    <button onclick="uploadMedia()" class="upload-btn">Upload</button>
+  </div>
+
+  <div class="filter-bar">
+    <select id="typeFilter" onchange="renderGallery()">
+      <option value="all">All Types</option>
+      <option value="image">Images</option>
+      <option value="video">Videos</option>
+    </select>
+
+    <select id="uploaderFilter" onchange="renderGallery()">
+      <option value="all">All Uploaders</option>
+    </select>
+  </div>
+
+  <div class="gallery" id="mediaGallery"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      getDocs,
+      deleteDoc,
+      doc,
+      onSnapshot,
+      query,
+      orderBy,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBOCaso0cw72WxrObQTOlcwSXzEVV2HP7U",
+      authDomain: "poppy-d5573.firebaseapp.com",
+      projectId: "poppy-d5573"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let mediaItems = [];
+
+    async function uploadMedia() {
+      const file = document.getElementById("fileInput").files[0];
+      const user = JSON.parse(localStorage.getItem("discordUser"));
+
+      if (!file) return alert("Please select a file to upload.");
+      if (!user) return alert("You must be logged in to upload media.");
+
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", "unsigned_uploads");
+        formData.append("folder", "pooper-scooper");
+
+        const res = await fetch("https://api.cloudinary.com/v1_1/dks4wgyhr/upload", {
+          method: "POST",
+          body: formData
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error?.message || "Cloudinary upload failed.");
+        }
+
+        const data = await res.json();
+
+        await addDoc(collection(db, "pooperScooper"), {
+          url: data.secure_url,
+          type: file.type.startsWith("video") ? "video" : "image",
+          uploader: `${user.username}#${user.discriminator}`,
+          uploaderId: user.id,
+          createdAt: serverTimestamp()
+        });
+
+        document.getElementById("fileInput").value = "";
+        alert("Upload successful!");
+      } catch (err) {
+        console.error("Upload failed:", err);
+        alert("Upload failed: " + err.message);
+      }
+    }
+
+
+    async function deleteMedia(docId) {
+      if (!confirm("Delete this media?")) return;
+      await deleteDoc(doc(db, "pooperScooper", docId));
+    }
+
+    function renderGallery() {
+      const type = document.getElementById("typeFilter").value;
+      const uploader = document.getElementById("uploaderFilter").value;
+      const user = JSON.parse(localStorage.getItem("discordUser"));
+      const container = document.getElementById("mediaGallery");
+
+      container.innerHTML = "";
+
+      const filtered = mediaItems.filter(item => {
+        return (type === "all" || item.data.type === type) &&
+               (uploader === "all" || item.data.uploaderId === uploader);
+      });
+
+      const uploaderSelect = document.getElementById("uploaderFilter");
+      uploaderSelect.innerHTML = `<option value="all">All Uploaders</option>`;
+      const seen = new Set();
+      mediaItems.forEach(m => {
+        if (!seen.has(m.data.uploaderId)) {
+          const opt = document.createElement("option");
+          opt.value = m.data.uploaderId;
+          opt.textContent = m.data.uploader;
+          uploaderSelect.appendChild(opt);
+          seen.add(m.data.uploaderId);
+        }
+      });
+
+      filtered.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "media-card";
+
+        if (item.data.type === "image") {
+          card.innerHTML += `<img src="${item.data.url}" alt="uploaded image">`;
+        } else {
+          card.innerHTML += `<video src="${item.data.url}" controls></video>`;
+        }
+
+        const date = item.data.createdAt?.toDate?.().toLocaleString() || "Just now";
+        card.innerHTML += `<div class="meta">Uploaded by <strong>${item.data.uploader}</strong><br>${date}</div>`;
+
+        const actions = document.createElement("div");
+        actions.className = "actions";
+
+        const likeBtn = document.createElement("button");
+        likeBtn.textContent = "❤️ Like";
+        actions.appendChild(likeBtn);
+
+        if (user && user.id === item.data.uploaderId) {
+          const delBtn = document.createElement("button");
+          delBtn.textContent = "🗑 Delete";
+          delBtn.onclick = () => deleteMedia(item.id);
+          actions.appendChild(delBtn);
+        }
+
+        card.appendChild(actions);
+        container.appendChild(card);
+      });
+    }
+
+    const q = query(collection(db, "pooperScooper"), orderBy("createdAt", "desc"));
+    onSnapshot(q, (snapshot) => {
+      mediaItems = snapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }));
+      renderGallery();
+    });
+  </script>
+
+  <script>
+    fetch("navbar.html")
+      .then(res => res.text())
+      .then(data => {
+        document.getElementById("navbar-container").innerHTML = data;
+
+        // Optionally mark the current nav link active
+        const currentPage = location.pathname.split("/").pop();
+        document.querySelectorAll("nav a").forEach(link => {
+          if (link.getAttribute("href") === currentPage) {
+            link.classList.add("active");
+          }
+        });
+      });
+  </script>
+
+
+</body>
+</html>

@@ -5,6 +5,19 @@ const corsHandler = cors({ origin: true });
 const { fetch } = require("undici");
 const axios = require("axios");
 
+const cloudinary = require("cloudinary").v2;
+const multer = require("multer");
+const os = require("os");
+const path = require("path");
+const fs = require("fs");
+
+cloudinary.config({
+  cloud_name: "dks4wgyhr",
+  api_key: "269264416417747",
+  api_secret: "vYmo7YyNbhvgwhTs-GsdnA53IT0"
+});
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -53,6 +66,67 @@ async function getAvatarImageUrl(userId, retries = 5) {
   return fallbackJson.data?.[0]?.imageUrl || null;
 }
 
+exports.uploadMedia = functions.https.onRequest((req, res) => {
+  cors(req, res, async () => {
+    if (req.method !== "POST") return res.status(405).send("Only POST allowed");
+
+    const busboy = require("busboy");
+    const bb = busboy({ headers: req.headers });
+
+    let fields = {};
+    let fileBuffer;
+
+    bb.on("file", (name, file, info) => {
+      file.on("data", (data) => {
+        fileBuffer = data;
+      });
+    });
+
+    bb.on("field", (name, val) => {
+      fields[name] = val;
+    });
+
+    bb.on("close", async () => {
+      try {
+        const type = fields.type || "image";
+        const uploadResult = await cloudinary.uploader.upload_stream(
+          {
+            resource_type: type === "video" ? "video" : "image"
+          },
+          async (err, result) => {
+            if (err) {
+              console.error("Cloudinary error:", err);
+              return res.status(500).json({ error: "Upload failed" });
+            }
+
+            // Save metadata to Firestore
+            await admin.firestore().collection("media").add({
+              url: result.secure_url,
+              type,
+              uploaderId: fields.uploaderId,
+              uploaderTag: fields.uploaderTag,
+              timestamp: admin.firestore.FieldValue.serverTimestamp(),
+              likes: 0,
+              likedBy: []
+            });
+
+            return res.status(200).json({ message: "Upload successful" });
+          }
+        );
+
+        const stream = require("stream");
+        const bufferStream = new stream.PassThrough();
+        bufferStream.end(fileBuffer);
+        bufferStream.pipe(uploadResult);
+      } catch (err) {
+        console.error("Upload error:", err);
+        return res.status(500).json({ error: "Something went wrong" });
+      }
+    });
+
+    req.pipe(bb);
+  });
+});
 
 // Cloud Function: Get Roblox Avatar
 exports.getRobloxAvatar = functions.https.onRequest((req, res) => {

@@ -6,16 +6,13 @@
   <title>Quote Wall - Poppy Pooperz</title>
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet"/>
+
   <style>
     body {
       margin: 0;
       background: #0e0e0e;
       color: white;
       font-family: 'Outfit', sans-serif;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
     }
 
     header {
@@ -26,8 +23,6 @@
       padding: 20px 40px;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
       flex-wrap: wrap;
-      width: 100%;
-      box-sizing: border-box;
     }
 
     .logo {
@@ -71,6 +66,7 @@
     h1 {
       font-weight: 800;
       margin: 40px 0 20px;
+      text-align: center;
     }
 
     .form-container {
@@ -79,7 +75,7 @@
       border-radius: 12px;
       width: 100%;
       max-width: 600px;
-      margin-bottom: 40px;
+      margin: 0 auto 40px;
     }
 
     textarea {
@@ -112,7 +108,8 @@
     }
 
     .sort-select {
-      margin-bottom: 20px;
+      display: block;
+      margin: 0 auto 20px;
       padding: 8px 12px;
       font-size: 14px;
       background: #2a2a2a;
@@ -124,6 +121,7 @@
     .quote-list {
       width: 100%;
       max-width: 800px;
+      margin: 0 auto;
       display: flex;
       flex-direction: column;
       gap: 20px;
@@ -176,7 +174,6 @@
       margin-left: 6px;
     }
 
-    /* Edit Modal */
     #editModal {
       display: none;
       position: fixed;
@@ -227,6 +224,27 @@
 
     .save-btn { background: #8a64ff; color: white; }
     .cancel-btn { background: #444; color: white; }
+
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 20px;
+      }
+
+      nav {
+        margin-top: 10px;
+        flex-direction: column;
+      }
+
+      nav a {
+        margin: 10px 0 0 0;
+      }
+
+      h1 {
+        font-size: 28px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -241,7 +259,7 @@
       <a href="member-catalog.html">Avatar Catalog</a>
       <a href="game-wheel.html">Game Wheel</a>
       <a href="quote-wall.html" class="active">Quote Wall</a>
-      <a href="who-is-online.html">Who's Online</a>
+      <a href="pooper-scooper.html">Pooper Scooper</a>
     </nav>
   </header>
 
@@ -433,6 +451,23 @@
 
     loadQuotes();
   </script>
+
+  <script>
+  fetch("navbar.html")
+    .then(res => res.text())
+    .then(data => {
+      document.getElementById("navbar-container").innerHTML = data;
+
+      // Optionally mark the current nav link active
+      const currentPage = location.pathname.split("/").pop();
+      document.querySelectorAll("nav a").forEach(link => {
+        if (link.getAttribute("href") === currentPage) {
+          link.classList.add("active");
+        }
+      });
+    });
+</script>
+
 </body>
 </html>
 

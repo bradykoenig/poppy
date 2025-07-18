@@ -18,7 +18,7 @@
       <a href="member-catalog.html">Avatar Catalog</a>
       <a href="game-wheel.html">Game Wheel</a>
       <a href="quote-wall.html">Quote Wall</a>
-      <a href="who-is-online.html">Who's Online</a>
+      <a href="pooper-scooper.html">Pooper Scooper</a>
     </nav>
   </header>
 
@@ -47,5 +47,23 @@
       window.location.href = "index.html";
     }
   </script>
+
+  <script>
+  fetch("navbar.html")
+    .then(res => res.text())
+    .then(data => {
+      document.getElementById("navbar-container").innerHTML = data;
+
+      // Optionally mark the current nav link active
+      const currentPage = location.pathname.split("/").pop();
+      document.querySelectorAll("nav a").forEach(link => {
+        if (link.getAttribute("href") === currentPage) {
+          link.classList.add("active");
+        }
+      });
+    });
+</script>
+
+  
 </body>
 </html>
