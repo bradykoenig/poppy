@@ -406,13 +406,6 @@
         };
         actions.appendChild(likeBtn);
 
-        if (user && user.id === item.data.uploaderId) {
-          const delBtn = document.createElement("button");
-          delBtn.textContent = "🗑 Delete";
-          delBtn.onclick = () => showConfirm(item.id);
-          actions.appendChild(delBtn);
-        }
-
         card.appendChild(actions);
         container.appendChild(card);
       });
