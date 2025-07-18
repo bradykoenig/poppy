@@ -392,20 +392,28 @@ exports.getPresence = functions.https.onRequest(async (req, res) => {
   });
 });
 
-// Discord OAuth2 exchange
+//OAuth Code Exchange
 exports.exchangeCode = functions.https.onRequest((req, res) => {
   cors(req, res, async () => {
-    if (req.method === "OPTIONS") return res.status(204).send(""); // handle CORS preflight
-
-    const code = req.body.code;
-    if (!code) return res.status(400).json({ error: "Missing authorization code" });
-
-    // 🔐 Discord OAuth secrets (inline for now)
-    const CLIENT_ID = "1395218126211125259";
-    const CLIENT_SECRET = "3pCcUvTR2Z0mPmzAOPHUKTGOzTMbWPk2";
-    const REDIRECT_URI = "https://poppypooperz.com/oauth-callback.html";
-
     try {
+      // Handle CORS preflight
+      if (req.method === "OPTIONS") return res.status(204).send("");
+
+      // Parse JSON body manually if needed
+      if (!req.body || typeof req.body === "string") {
+        req.body = JSON.parse(req.body || "{}");
+      }
+
+      const code = req.body.code;
+      if (!code) {
+        console.error("❌ Missing authorization code");
+        return res.status(400).json({ error: "Missing authorization code" });
+      }
+
+      const CLIENT_ID = "1395218126211125259";
+      const CLIENT_SECRET = "3pCcUvTR2Z0mPmzAOPHUKTGOzTMbWPk2";
+      const REDIRECT_URI = "https://poppypooperz.com/oauth-callback.html";
+
       const params = new URLSearchParams();
       params.append("client_id", CLIENT_ID);
       params.append("client_secret", CLIENT_SECRET);
@@ -416,38 +424,51 @@ exports.exchangeCode = functions.https.onRequest((req, res) => {
 
       const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
         body: params,
       });
 
       if (!tokenRes.ok) {
         const errText = await tokenRes.text();
+        console.error("❌ Token exchange failed:", errText);
         return res.status(400).json({ error: "Token exchange failed", details: errText });
       }
 
       const tokenData = await tokenRes.json();
       const access_token = tokenData.access_token;
 
+      // Fetch user info
       const userRes = await fetch("https://discord.com/api/users/@me", {
         headers: { Authorization: `Bearer ${access_token}` },
       });
       const user = await userRes.json();
 
+      // Fetch guilds
       const guildsRes = await fetch("https://discord.com/api/users/@me/guilds", {
         headers: { Authorization: `Bearer ${access_token}` },
       });
       const guilds = await guildsRes.json();
 
       if (!user.id || !Array.isArray(guilds)) {
+        console.error("❌ Incomplete user or guild data", { user, guilds });
         return res.status(500).json({ error: "Incomplete user or guild data", user, guilds });
       }
 
-      res.json({ access_token, user, guilds });
+      console.log("✅ OAuth Exchange Success:", user.username);
+
+      return res.status(200).json({
+        access_token,
+        user,
+        guilds
+      });
 
     } catch (err) {
-      console.error("OAuth error:", err);
-      res.status(500).json({ error: "Internal server error" });
+      console.error("❌ OAuth exchangeCode error:", err);
+      return res.status(500).json({ error: "Internal server error", details: err.message });
     }
   });
 });
+
 
