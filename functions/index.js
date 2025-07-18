@@ -394,21 +394,22 @@ exports.getPresence = functions.https.onRequest(async (req, res) => {
 
 //OAuth Code Exchange
 exports.exchangeCode = functions.https.onRequest((req, res) => {
-  cors(req, res, async () => {
-    try {
-      // Handle CORS preflight
-      if (req.method === "OPTIONS") return res.status(204).send("");
+  corsHandler(req, res, async () => {
+    if (req.method === "OPTIONS") {
+      // Handle preflight
+      res.set("Access-Control-Allow-Origin", "*");
+      res.set("Access-Control-Allow-Methods", "POST");
+      res.set("Access-Control-Allow-Headers", "Content-Type");
+      return res.status(204).send("");
+    }
 
-      // Parse JSON body manually if needed
+    try {
       if (!req.body || typeof req.body === "string") {
         req.body = JSON.parse(req.body || "{}");
       }
 
       const code = req.body.code;
-      if (!code) {
-        console.error("❌ Missing authorization code");
-        return res.status(400).json({ error: "Missing authorization code" });
-      }
+      if (!code) return res.status(400).json({ error: "Missing authorization code" });
 
       const CLIENT_ID = "1395218126211125259";
       const CLIENT_SECRET = "3pCcUvTR2Z0mPmzAOPHUKTGOzTMbWPk2";
@@ -424,9 +425,7 @@ exports.exchangeCode = functions.https.onRequest((req, res) => {
 
       const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
-        },
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: params,
       });
 
@@ -439,25 +438,21 @@ exports.exchangeCode = functions.https.onRequest((req, res) => {
       const tokenData = await tokenRes.json();
       const access_token = tokenData.access_token;
 
-      // Fetch user info
       const userRes = await fetch("https://discord.com/api/users/@me", {
         headers: { Authorization: `Bearer ${access_token}` },
       });
       const user = await userRes.json();
 
-      // Fetch guilds
       const guildsRes = await fetch("https://discord.com/api/users/@me/guilds", {
         headers: { Authorization: `Bearer ${access_token}` },
       });
       const guilds = await guildsRes.json();
 
       if (!user.id || !Array.isArray(guilds)) {
-        console.error("❌ Incomplete user or guild data", { user, guilds });
         return res.status(500).json({ error: "Incomplete user or guild data", user, guilds });
       }
 
-      console.log("✅ OAuth Exchange Success:", user.username);
-
+      res.set("Access-Control-Allow-Origin", "*"); // ✅ allow CORS for frontend
       return res.status(200).json({
         access_token,
         user,
@@ -465,10 +460,12 @@ exports.exchangeCode = functions.https.onRequest((req, res) => {
       });
 
     } catch (err) {
-      console.error("❌ OAuth exchangeCode error:", err);
+      console.error("OAuth error:", err);
+      res.set("Access-Control-Allow-Origin", "*");
       return res.status(500).json({ error: "Internal server error", details: err.message });
     }
   });
 });
+
 
 
