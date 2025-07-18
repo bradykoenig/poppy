@@ -439,13 +439,18 @@
 
     window.confirmDelete = async function confirmDelete() {
       if (!pendingDeleteId) return;
-      const idToDelete = pendingDeleteId;
+
+      const docId = pendingDeleteId; // ✅ preserve before clearing
       pendingDeleteId = null;
 
-      // Hide modal first to avoid it flashing back
       document.getElementById("confirmOverlay").style.display = "none";
 
-      await deleteDoc(doc(db, "pooperScooper", idToDelete));
+      try {
+        await deleteDoc(doc(db, "pooperScooper", docId));
+      } catch (err) {
+        console.error("Failed to delete:", err);
+        alert("Failed to delete the media. Check console for details.");
+      }
     };
 
 
