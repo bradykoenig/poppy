@@ -2,46 +2,59 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Logging in...</title>
+  <title>Logging In...</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      background: #0e0e0e;
+      color: white;
+      font-family: 'Outfit', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-size: 24px;
+      font-weight: 700;
+    }
+  </style>
 </head>
-<body style="background: #0f0f0f; color: white; text-align: center; padding-top: 100px;">
-  <h2>Logging in...</h2>
+<body>
+  Logging in...
 
   <script>
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get("code");
+    async function exchangeCodeForUser(code) {
+      try {
+        const res = await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/exchangeCode", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code })
+        });
 
-    if (!code) {
-      alert("Login failed: No authorization code found.");
-      window.location.href = "/home.html";
+        if (!res.ok) throw new Error("Token exchange failed");
+
+        const { user, guilds } = await res.json();
+
+        // ✅ Save to localStorage
+        localStorage.setItem("discordUser", JSON.stringify(user));
+        localStorage.setItem("discordGuilds", JSON.stringify(guilds));
+
+        // ✅ Redirect to homepage or wherever
+        window.location.href = "home.html";
+
+      } catch (err) {
+        console.error("OAuth failed:", err);
+        document.body.innerHTML = `<p style="color: red; text-align: center;">Login failed. Try again.</p>`;
+      }
     }
 
-    fetch("https://us-central1-poppy-d5573.cloudfunctions.net/exchangeCode", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code })
-    })
-    .then(res => res.json())
-    .then(data => {
-      const { access_token, user, guilds } = data;
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get("code");
 
-      const inServer = Array.isArray(guilds) &&
-        guilds.some(g => g.id === "1391923229249114112");
-
-      if (!inServer) {
-        alert("You are not in the Poppy Pooperz Discord server!");
-        window.location.href = "/";
-        return;
-      }
-
-      localStorage.setItem("discordUser", JSON.stringify(user));
-      window.location.href = "/";
-    })
-    .catch(err => {
-      console.error("OAuth callback error:", err);
-      alert("Login failed.");
-      window.location.href = "/";
-    });
+    if (code) {
+      exchangeCodeForUser(code);
+    } else {
+      document.body.innerHTML = `<p style="color: red; text-align: center;">Missing authorization code</p>`;
+    }
   </script>
 </body>
 </html>
