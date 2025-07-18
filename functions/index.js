@@ -336,7 +336,7 @@ exports.getQuotes = functions.https.onRequest((req, res) => {
   });
 });
 
-exports.updatePresence = functions.https.onRequest(async (req, res) => {
+exports.updatePresence = functions.https.onRequest((req, res) => {
   corsHandler(req, res, async () => {
     const { discordId, discordTag, avatar } = req.body;
     if (!discordId || !discordTag || !avatar) {
@@ -344,20 +344,18 @@ exports.updatePresence = functions.https.onRequest(async (req, res) => {
     }
 
     try {
-      const ref = admin.firestore().collection("presence").doc(discordId);
+      const ref = db.collection("presence").doc(discordId);
       const doc = await ref.get();
-      const now = admin.firestore.Timestamp.now();
+      const now = admin.firestore.Timestamp.now(); // only call this once
 
       const updateData = {
         discordTag,
         avatar,
-        lastSeen: admin.firestore.Timestamp.now(),
+        lastSeen: now,
         visits: doc.exists ? (doc.data().visits || 1) + 1 : 1
       };
 
-
       await ref.set(updateData, { merge: true });
-
       res.status(200).json({ message: "Presence updated" });
     } catch (err) {
       console.error("Failed to update presence:", err);
@@ -367,10 +365,11 @@ exports.updatePresence = functions.https.onRequest(async (req, res) => {
 });
 
 
-exports.getPresence = functions.https.onRequest(async (req, res) => {
+// Your current getPresence is totally fine
+exports.getPresence = functions.https.onRequest((req, res) => {
   corsHandler(req, res, async () => {
     try {
-      const snap = await admin.firestore().collection("presence").get();
+      const snap = await db.collection("presence").get();
       const users = [];
 
       snap.forEach(doc => {
@@ -391,6 +390,7 @@ exports.getPresence = functions.https.onRequest(async (req, res) => {
     }
   });
 });
+
 
 //OAuth Code Exchange
 exports.exchangeCode = functions.https.onRequest((req, res) => {

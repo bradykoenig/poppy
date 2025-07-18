@@ -33,8 +33,7 @@ async function updatePresence() {
     : `https://cdn.discordapp.com/embed/avatars/0.png`;
 
   try {
-    console.log("Presence update response:", await response.json());
-    await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/updatePresence", {
+    const response = await fetch("https://us-central1-poppy-d5573.cloudfunctions.net/updatePresence", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -44,11 +43,13 @@ async function updatePresence() {
       })
     });
 
-    console.log("Presence updated.");
+    const json = await response.json();
+    console.log("Presence update response:", json);
   } catch (err) {
     console.error("Presence update failed:", err);
   }
 }
+
 
 updatePresence();
 setInterval(updatePresence, 60000); // update every minute
